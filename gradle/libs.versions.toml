@@ -52,4 +52,12 @@ okhttp-logging = { module = "com.squareup.okhttp3:logging-interceptor", version.
 
 # Firebase
 firebase-admin-sdk = { module = "com.google.firebase:firebase-admin", version.ref = "firebase" }
+
+# Test
+spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test" }
+kotlin-test-junit5 = { module = "org.jetbrains.kotlin:kotlin-test-junit5" }
+spring-rabbit-test = { module = "org.springframework.amqp:spring-rabbit-test" }
+spring-restdocs-mockmvc = { module = "org.springframework.restdocs:spring-restdocs-mockmvc" }
+spring-security-test = { module = "org.springframework.security:spring-security-test" }
+junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher" }
 [plugins]
