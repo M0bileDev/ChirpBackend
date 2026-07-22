@@ -1,9 +1,13 @@
 plugins {
-    kotlin("jvm") version "2.3.21"
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.kotlin.spring)
+    alias(libs.plugins.spring.boot)
+    alias(libs.plugins.spring.dependency.management)
+    alias(libs.plugins.kotlin.jpa)
 }
 
 group = "com.mobidev.studio"
-version = "0.0.1-SNAPSHOT"
+version = "unspecified"
 
 repositories {
     mavenCentral()
