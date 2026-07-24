@@ -1,4 +1,3 @@
-import gradle.kotlin.dsl.accessors._565523fedfee3a6c98c237d5d815b2e0.dependencyManagement
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
