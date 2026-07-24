@@ -1,9 +1,9 @@
 plugins {
-    alias(libs.plugins.kotlin.jvm)
-    alias(libs.plugins.kotlin.spring)
-    alias(libs.plugins.spring.boot)
-    alias(libs.plugins.spring.dependency.management)
-    alias(libs.plugins.kotlin.jpa)
+    // makes it as regular library
+    id("java-library")
+    id("chirp.spring-boot-service")
+    // persistence api
+    kotlin("plugin.jpa")
 }
 
 group = "com.mobidev.studio"
