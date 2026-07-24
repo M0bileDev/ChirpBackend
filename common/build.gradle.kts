@@ -1,7 +1,6 @@
 plugins {
     // makes it as regular library
     id("java-library")
-    id("org.springframework.boot")
     id("chirp.kotlin-common")
 }
 
