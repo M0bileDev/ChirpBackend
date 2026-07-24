@@ -6,6 +6,11 @@ group = "com.mobidev.studio"
 version = "0.0.1-SNAPSHOT"
 
 dependencies {
+    implementation(projects.common)
+    implementation(projects.chat)
+    implementation(projects.notification)
+    implementation(projects.user)
+
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-amqp")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
