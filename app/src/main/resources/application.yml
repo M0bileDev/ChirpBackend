@@ -2,4 +2,8 @@ spring:
   application:
     name: chirp
 
-
+  datasource:
+    url: jdbc:postgresql://db.ehsemazmuqmwxemmlaqa.supabase.co:5432/postgres
+    username: postgres
+    password: ${POSTGRES_PASSWORD}
+    driver-class-name: org.postgresql.Driver
