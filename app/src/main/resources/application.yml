@@ -1,0 +1,46 @@
+spring:
+  application:
+    name: chirp
+
+  datasource:
+    url: jdbc:postgresql://db.ehsemazmuqmwxemmlaqa.supabase.co:5432/postgres
+    username: postgres
+    password: ${POSTGRES_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+#    Tool for db connection managing
+    hikari:
+#      maximum amount of connection pool
+      maximum-pool-size: 10
+#      always, at least 5 open connections
+      minimum-idle: 5
+#      timeout, after connection with be finished
+      connection-timeout: 20000
+#      fow how long connection can stay in idle
+      idle-timeout: 300000
+#      for how long connection can be established
+      max-lifetime: 12000000
+#      validation query timeout
+      validation-timeout: 5000
+      pool-name: SpringBootHikariCP
+#      properties specific to database that is in use like postgres
+      data-source-properties:
+#        how many times query has to be executed to prepare statement
+        prepareThreshold: 5
+#        how many queries should be prepared in cache
+        preparedStatementCacheQueries: 256
+#        define size for cached queries
+        preparedStatementCacheSizeMiB: 5
+
+        tcpKeepAlive: true
+        socketTimeout: 30
+        connectionTimeout: 10
+
+  jpa:
+    properties:
+#      jpa implementation
+      hibernate:
+#        sql type
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        show_sql: true

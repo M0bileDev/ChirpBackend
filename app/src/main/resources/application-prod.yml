@@ -1,0 +1,6 @@
+# production configuration
+spring:
+  jpa:
+    hibernate:
+#      validate the schema, make no changes to the database
+      ddl-auto: validate

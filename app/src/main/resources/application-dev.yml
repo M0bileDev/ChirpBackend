@@ -1,0 +1,6 @@
+# development configuration
+spring:
+  jpa:
+    hibernate:
+#      update the schema if necessary
+      ddl-auto: update
