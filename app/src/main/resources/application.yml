@@ -35,3 +35,12 @@ spring:
         tcpKeepAlive: true
         socketTimeout: 30
         connectionTimeout: 10
+
+  jpa:
+    properties:
+#      jpa implementation
+      hibernate:
+#        sql type
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        show_sql: true
