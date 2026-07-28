@@ -1,4 +1,4 @@
-package com.mobidev.studio.user.domain.model
+package com.mobidev.studio.chirp.domain.model
 
 data class AuthenticatedUser(
     val user: User,

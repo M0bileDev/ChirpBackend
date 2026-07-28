@@ -1,11 +1,10 @@
-package com.mobidev.studio.user.infra.database.entities
+package com.mobidev.studio.chirp.infra.database.entities
 
-import com.mobidev.studio.user.domain.model.UserId
+import com.mobidev.studio.chirp.domain.model.UserId
 import jakarta.persistence.*
 import org.hibernate.annotations.CreationTimestamp
 import org.hibernate.annotations.UpdateTimestamp
-import kotlin.time.Clock
-import kotlin.time.Instant
+import java.time.Instant
 
 @Entity
 @Table(
@@ -29,7 +28,7 @@ class UserEntity(
     @Column(nullable = false)
     var hasVerifiedEmail: Boolean = false,
     @CreationTimestamp
-    var createdAt: Instant = Clock.System.now(),
+    var createdAt: Instant = Instant.now(),
     @UpdateTimestamp
-    var updatedAt: Instant = Clock.System.now(),
+    var updatedAt: Instant = Instant.now(),
 )
