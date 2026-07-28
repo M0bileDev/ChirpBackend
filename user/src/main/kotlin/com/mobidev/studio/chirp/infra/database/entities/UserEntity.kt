@@ -1,6 +1,6 @@
-package com.mobidev.studio.user.infra.database.entities
+package com.mobidev.studio.chirp.infra.database.entities
 
-import com.mobidev.studio.user.domain.model.UserId
+import com.mobidev.studio.chirp.domain.model.UserId
 import jakarta.persistence.*
 import org.hibernate.annotations.CreationTimestamp
 import org.hibernate.annotations.UpdateTimestamp
