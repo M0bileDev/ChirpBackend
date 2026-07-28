@@ -15,6 +15,11 @@ repositories {
 
 dependencies {
     implementation(projects.common)
+
+    implementation(libs.spring.boot.starter.data.jpa)
+    // enable connection to postgresql instance
+    runtimeOnly(libs.postgresql)
+
     testImplementation(kotlin("test"))
 }
 
