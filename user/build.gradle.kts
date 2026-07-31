@@ -19,6 +19,8 @@ dependencies {
     implementation(libs.spring.boot.starter.data.jpa)
     // enable connection to postgresql instance
     runtimeOnly(libs.postgresql)
+    // enables password encoder
+    implementation(libs.spring.boot.starter.security)
 
     testImplementation(kotlin("test"))
 }
