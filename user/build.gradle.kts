@@ -21,6 +21,8 @@ dependencies {
     runtimeOnly(libs.postgresql)
     // enables password encoder
     implementation(libs.spring.boot.starter.security)
+    // enables validation annotations
+    implementation(libs.spring.boot.starter.validation)
 
     testImplementation(kotlin("test"))
 }
