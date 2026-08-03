@@ -6,7 +6,9 @@ import com.mobidev.studio.chirp.infra.database.entities.UserEntity
 import com.mobidev.studio.chirp.infra.database.repositories.UserRepository
 import com.mobidev.studio.chirp.infra.mappers.toUser
 import com.mobidev.studio.chirp.infra.security.PasswordEncoder
+import org.springframework.stereotype.Service
 
+@Service
 class AuthService(
     private val userRepository: UserRepository,
     private val passwordEncoder: PasswordEncoder
