@@ -2,6 +2,8 @@ package com.mobidev.studio.chirp.api.exception_handling
 
 import com.mobidev.studio.chirp.domain.exception.UserAlreadyExistsException
 import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestControllerAdvice
@@ -18,7 +20,25 @@ class AuthExceptionHandler {
     ) =
         // JSON result of user already exists exception
         mapOf(
-        "code" to "USER_ALREADY_EXIST",
-        "message" to e.message
-    )
+            "code" to "USER_ALREADY_EXIST",
+            "message" to e.message
+        )
+
+    @ExceptionHandler(MethodArgumentNotValidException::class)
+    fun onValidationException(
+        e: MethodArgumentNotValidException,
+    ): ResponseEntity<Map<String, Any>> {
+        val errors = e.bindingResult.allErrors.map {
+            it.defaultMessage ?: "Invalid value"
+        }
+
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(
+                mapOf(
+                    "code" to "VALIDATION_ERROR",
+                    "errors" to errors
+                )
+            )
+    }
 }
