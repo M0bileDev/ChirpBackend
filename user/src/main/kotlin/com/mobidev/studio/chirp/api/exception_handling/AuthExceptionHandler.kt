@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestControllerAdvice
 
-// how to handle exceptions in RestController
+// global configuration how to handle exceptions in RestController
 @RestControllerAdvice
 class AuthExceptionHandler {
 
