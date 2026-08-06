@@ -24,6 +24,12 @@ dependencies {
     // enables validation annotations
     implementation(libs.spring.boot.starter.validation)
 
+    // enables jwt related classes
+    implementation(libs.jwt.api)
+    runtimeOnly(libs.jwt.impl)
+    // enables serialization
+    runtimeOnly(libs.jwt.jackson)
+
     testImplementation(kotlin("test"))
 }
 
