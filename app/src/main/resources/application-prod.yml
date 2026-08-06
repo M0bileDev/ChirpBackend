@@ -4,3 +4,6 @@ spring:
     hibernate:
 #      validate the schema, make no changes to the database
       ddl-auto: validate
+
+jwt:
+  expiration-minutes: 15
