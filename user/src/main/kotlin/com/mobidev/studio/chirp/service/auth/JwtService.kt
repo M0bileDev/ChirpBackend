@@ -57,6 +57,13 @@ class JwtService(
         return generateToken(userId = userId, type = REFRESH, expiry = refreshTokenValidityMs)
     }
 
+    fun validateAccessToken(accessToken: String): Boolean {
+        val claims = parseAllClaims(token = accessToken) ?: return false
+        val tokenType = claims[TYPE] as? String ?: return false
+
+        return  tokenType == TYPE
+    }
+
     companion object {
         private const val ACCESS = "access"
         private const val REFRESH = "refresh"
