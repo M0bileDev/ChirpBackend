@@ -29,7 +29,7 @@ class JwtService(
         return Jwts
             .builder()
             .subject(userId.toString())
-            .claim("type", type)
+            .claim(TYPE, type)
             .issuedAt(now)
             .expiration(expirationDate)
             .signWith(secretKey, Jwts.SIG.HS256)
@@ -37,7 +37,7 @@ class JwtService(
     }
 
     private fun parseAllClaims(token: String): Claims? {
-        val rawToken = if (token.startsWith("Bearer ")) token.removePrefix("Bearer ") else token
+        val rawToken = if (token.startsWith(BEARER_PREFIX)) token.removePrefix(BEARER_PREFIX) else token
         val jwtsParser = Jwts.parser()
             .verifyWith(secretKey)
             .build()
@@ -58,7 +58,9 @@ class JwtService(
     }
 
     companion object {
-        const val ACCESS = "access"
-        const val REFRESH = "refresh"
+        private const val ACCESS = "access"
+        private const val REFRESH = "refresh"
+        private const val TYPE = "type"
+        private const val BEARER_PREFIX = "Bearer "
     }
 }
