@@ -61,7 +61,14 @@ class JwtService(
         val claims = parseAllClaims(token = accessToken) ?: return false
         val tokenType = claims[TYPE] as? String ?: return false
 
-        return  tokenType == TYPE
+        return  tokenType == ACCESS
+    }
+
+    fun validateRefreshToken(refreshToken: String): Boolean {
+        val claims = parseAllClaims(token = refreshToken) ?: return false
+        val tokenType = claims[TYPE] as? String ?: return false
+
+        return  tokenType == REFRESH
     }
 
     companion object {
