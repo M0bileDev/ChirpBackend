@@ -1,5 +1,6 @@
 package com.mobidev.studio.chirp.service.auth
 
+import com.mobidev.studio.chirp.domain.exception.InvalidTokenException
 import com.mobidev.studio.chirp.domain.model.UserId
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jwts
@@ -61,14 +62,20 @@ class JwtService(
         val claims = parseAllClaims(token = accessToken) ?: return false
         val tokenType = claims[TYPE] as? String ?: return false
 
-        return  tokenType == ACCESS
+        return tokenType == ACCESS
     }
 
     fun validateRefreshToken(refreshToken: String): Boolean {
         val claims = parseAllClaims(token = refreshToken) ?: return false
         val tokenType = claims[TYPE] as? String ?: return false
 
-        return  tokenType == REFRESH
+        return tokenType == REFRESH
+    }
+
+    fun getUserIdFromToken(token: String): UserId {
+        val claims = parseAllClaims(token) ?: throw InvalidTokenException("Attached JWT token is invalid.")
+
+        return UUID.fromString(claims.subject)
     }
 
     companion object {
