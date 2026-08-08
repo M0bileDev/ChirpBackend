@@ -20,7 +20,7 @@ class JwtService(
         Base64.decode(secretBase64)
     )
     private val accessTokenValidityMs = expirationMinutes * 60 * 1000L
-    val refreshTokenValidityMs = 30 * 24 * 60 * 60 * 1000
+    val refreshTokenValidityMs = 30 * 24 * 60 * 60 * 1000L
 
     private fun generateToken(userId: UserId, type: String, expiry: Long): String {
         val now = Date()
@@ -51,6 +51,10 @@ class JwtService(
 
     fun generateAccessToken(userId: UserId): String {
         return generateToken(userId = userId, type = ACCESS, expiry = accessTokenValidityMs)
+    }
+
+    fun generateRefreshToken(userId: UserId): String {
+        return generateToken(userId = userId, type = REFRESH, expiry = refreshTokenValidityMs)
     }
 
     companion object {
