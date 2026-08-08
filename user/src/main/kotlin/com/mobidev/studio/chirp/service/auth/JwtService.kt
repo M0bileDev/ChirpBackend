@@ -19,7 +19,7 @@ class JwtService(
     private val secretKey = Keys.hmacShaKeyFor(
         Base64.decode(secretBase64)
     )
-    private val accessTokenValidityMs = expirationMinutes * 60 * 1000
+    private val accessTokenValidityMs = expirationMinutes * 60 * 1000L
     val refreshTokenValidityMs = 30 * 24 * 60 * 60 * 1000
 
     private fun generateToken(userId: UserId, type: String, expiry: Long): String {
@@ -47,5 +47,14 @@ class JwtService(
         } catch (_: Exception) {
             null
         }
+    }
+
+    fun generateAccessToken(userId: UserId): String {
+        return generateToken(userId = userId, type = ACCESS, expiry = accessTokenValidityMs)
+    }
+
+    companion object {
+        const val ACCESS = "access"
+        const val REFRESH = "refresh"
     }
 }
