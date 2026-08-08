@@ -1,5 +1,6 @@
 package com.mobidev.studio.chirp.api.exception_handling
 
+import com.mobidev.studio.chirp.domain.exception.InvalidTokenException
 import com.mobidev.studio.chirp.domain.exception.UserAlreadyExistsException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -21,6 +22,16 @@ class AuthExceptionHandler {
         // JSON result of user already exists exception
         mapOf(
             "code" to "USER_ALREADY_EXIST",
+            "message" to e.message
+        )
+
+    @ExceptionHandler(InvalidTokenException::class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    fun onInvalidToken(
+        e: InvalidTokenException
+    ) =
+        mapOf(
+            "code" to "INVALID_TOKEN",
             "message" to e.message
         )
 
