@@ -1,6 +1,7 @@
 package com.mobidev.studio.chirp.service.auth
 
 import com.mobidev.studio.chirp.domain.model.UserId
+import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.Keys
 import org.springframework.beans.factory.annotation.Value
@@ -33,5 +34,18 @@ class JwtService(
             .expiration(expirationDate)
             .signWith(secretKey, Jwts.SIG.HS256)
             .compact()
+    }
+
+    private fun parseAllClaims(token: String): Claims? {
+        val rawToken = if (token.startsWith("Bearer ")) token.removePrefix("Bearer ") else token
+        val jwtsParser = Jwts.parser()
+            .verifyWith(secretKey)
+            .build()
+
+        return try {
+            jwtsParser.parseSignedClaims(rawToken).payload
+        } catch (_: Exception) {
+            null
+        }
     }
 }
