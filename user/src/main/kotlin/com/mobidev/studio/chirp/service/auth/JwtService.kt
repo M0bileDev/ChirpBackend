@@ -1,8 +1,11 @@
 package com.mobidev.studio.chirp.service.auth
 
+import com.mobidev.studio.chirp.domain.model.UserId
+import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.Keys
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
+import java.util.*
 import kotlin.io.encoding.Base64
 
 @Service
@@ -17,4 +20,18 @@ class JwtService(
     )
     private val accessTokenValidityMs = expirationMinutes * 60 * 1000
     val refreshTokenValidityMs = 30 * 24 * 60 * 60 * 1000
+
+    private fun generateToken(userId: UserId, type: String, expiry: Long): String {
+        val now = Date()
+        val expirationDate = Date(now.time + expiry)
+
+        return Jwts
+            .builder()
+            .subject(userId.toString())
+            .claim("type", type)
+            .issuedAt(now)
+            .expiration(expirationDate)
+            .signWith(secretKey, Jwts.SIG.HS256)
+            .compact()
+    }
 }
