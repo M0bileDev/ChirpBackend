@@ -1,8 +1,9 @@
 package com.mobidev.studio.chirp.service.auth
 
+import com.mobidev.studio.chirp.domain.exception.InvalidCredentialsException
 import com.mobidev.studio.chirp.domain.exception.UserAlreadyExistsException
-import com.mobidev.studio.chirp.domain.model.User
-import com.mobidev.studio.chirp.domain.model.UserId
+import com.mobidev.studio.chirp.domain.exception.UserNotFoundException
+import com.mobidev.studio.chirp.domain.model.*
 import com.mobidev.studio.chirp.infra.database.entities.RefreshTokenEntity
 import com.mobidev.studio.chirp.infra.database.entities.UserEntity
 import com.mobidev.studio.chirp.infra.database.repositories.RefreshTokenRepository
@@ -42,6 +43,33 @@ class AuthService(
         return savedUser
     }
 
+    fun login(email: String, password: String): AuthenticatedUser {
+        val user = userRepository.findByEmail(email.trim())
+            ?: throw InvalidCredentialsException()
+
+        if (!passwordEncoder.matches(password, user.password))
+            throw InvalidCredentialsException()
+
+        //TODO: check email verification
+
+        val tokens = user.id?.let { userId ->
+            val accessToken = jwtService.generateAccessToken(userId = userId)
+            val refreshToken = jwtService.generateRefreshToken(userId = userId)
+
+            storeRefreshToken(userId = user.id!!, refreshToken)
+
+            Tokens(accessToken = accessToken, refreshToken = refreshToken)
+        } ?: throw UserNotFoundException()
+
+        val authenticatedUser = AuthenticatedUser(
+            user = user.toUser(),
+            accessToken = tokens.accessToken,
+            refreshToken = tokens.refreshToken
+        )
+
+        return authenticatedUser
+    }
+
     private fun storeRefreshToken(userId: UserId, token: String) {
         val hashedRefreshToken = hashToken(token = token)
         val expiresAt = Instant.now().plusMillis(jwtService.refreshTokenValidityMs)
@@ -63,3 +91,5 @@ class AuthService(
         return Base64.getEncoder().encodeToString(hashBytes)
     }
 }
+
+private data class Tokens(val accessToken: AccessToken, val refreshToken: RefreshToken)
