@@ -1,5 +1,6 @@
 package com.mobidev.studio.chirp.api.exception_handling
 
+import com.mobidev.studio.chirp.domain.exception.InvalidCredentialsException
 import com.mobidev.studio.chirp.domain.exception.InvalidTokenException
 import com.mobidev.studio.chirp.domain.exception.UserAlreadyExistsException
 import com.mobidev.studio.chirp.domain.exception.UserNotFoundException
@@ -62,4 +63,13 @@ class AuthExceptionHandler {
             "code" to "USER_NOT_FOUND",
             "message" to e.message
         )
+
+    @ExceptionHandler(InvalidCredentialsException::class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    fun onInvalidCredentials(
+        e: InvalidCredentialsException
+    ) = mapOf(
+        "code" to "INVALID_CREDENTIALS",
+        "message" to e.message
+    )
 }
