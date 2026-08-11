@@ -5,6 +5,7 @@ import com.mobidev.studio.chirp.api.dto.UserDto
 import com.mobidev.studio.chirp.api.mappers.toAuthenticatedUserDto
 import com.mobidev.studio.chirp.api.mappers.toUserDto
 import com.mobidev.studio.chirp.api.request.LoginRequest
+import com.mobidev.studio.chirp.api.request.RefreshRequest
 import com.mobidev.studio.chirp.api.request.RegisterRequest
 import com.mobidev.studio.chirp.service.auth.AuthService
 import jakarta.validation.Valid
@@ -37,6 +38,15 @@ class AuthController(
         return authService.login(
             email = body.email,
             password = body.password
+        ).toAuthenticatedUserDto()
+    }
+
+    @PostMapping("/refresh")
+    fun refresh(
+        @RequestBody body: RefreshRequest
+    ): AuthenticatedUserDto {
+        return authService.refresh(
+            body.refreshToken
         ).toAuthenticatedUserDto()
     }
 }
