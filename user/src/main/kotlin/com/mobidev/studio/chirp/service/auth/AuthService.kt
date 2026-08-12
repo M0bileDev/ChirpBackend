@@ -131,6 +131,17 @@ class AuthService(
 
         return Base64.getEncoder().encodeToString(hashBytes)
     }
+
+    @Transactional
+    fun logout(refreshToken: String) {
+        val userId = jwtService.getUserIdFromToken(refreshToken)
+        val hashedRefreshToken = hashToken(refreshToken)
+
+        refreshTokenRepository.deleteByUserIdAndHashedToken(
+            userId = userId,
+            hashedToken = hashedRefreshToken
+        )
+    }
 }
 
 private data class Tokens(val accessToken: AccessToken, val refreshToken: RefreshToken)
