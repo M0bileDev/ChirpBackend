@@ -9,6 +9,7 @@ import com.mobidev.studio.chirp.infra.database.repositories.UserRepository
 import com.mobidev.studio.chirp.infra.mappers.toEmailVerificationToken
 import jakarta.transaction.Transactional
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -59,5 +60,12 @@ class EmailVerificationService(
 
         val updatedUser = emailVerificationToken.user.apply { hasVerifiedEmail = true }
         userRepository.save(updatedUser)
+    }
+
+    @Scheduled(cron = "0 0 3 * * *")
+    fun cleanupExpiredTokensTask(){
+        val now = Instant.now()
+
+        emailVerificationTokenRepository.deleteByExpiresAtLessThan(now)
     }
 }
