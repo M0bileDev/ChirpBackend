@@ -25,7 +25,7 @@ class EmailVerificationTokenEntity(
     @JoinColumn(name = "user_id", nullable = false)
     var user: UserEntity,
     @Column
-    var usedAt: Instant?,
+    var usedAt: Instant? = null,
     @CreationTimestamp
     var createdAt: Instant = Instant.now(),
 )
