@@ -1,5 +1,6 @@
 package com.mobidev.studio.chirp.service.auth
 
+import com.mobidev.studio.chirp.domain.exception.InvalidTokenException
 import com.mobidev.studio.chirp.domain.exception.UserNotFoundException
 import com.mobidev.studio.chirp.domain.model.EmailVerificationToken
 import com.mobidev.studio.chirp.infra.database.entities.EmailVerificationTokenEntity
@@ -11,8 +12,6 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import java.time.temporal.TemporalUnit
-import java.util.concurrent.TimeUnit
 
 @Service
 class EmailVerificationService(
@@ -40,5 +39,25 @@ class EmailVerificationService(
         )
 
         return emailVerificationTokenRepository.save(tokenEntity).toEmailVerificationToken()
+    }
+
+    @Transactional
+    fun verifyEmail(token: String) {
+        val emailVerificationToken = emailVerificationTokenRepository.findByToken(token)
+            ?: throw InvalidTokenException("Email verification token is invalid.")
+
+        if (emailVerificationToken.isUsed) {
+            throw InvalidTokenException("Email verification token is already used.")
+        }
+
+        if (emailVerificationToken.isExpired) {
+            throw InvalidTokenException("Email verification token is expired.")
+        }
+
+        val updatedToken = emailVerificationToken.apply { usedAt = Instant.now() }
+        emailVerificationTokenRepository.save(updatedToken)
+
+        val updatedUser = emailVerificationToken.user.apply { hasVerifiedEmail = true }
+        userRepository.save(updatedUser)
     }
 }
