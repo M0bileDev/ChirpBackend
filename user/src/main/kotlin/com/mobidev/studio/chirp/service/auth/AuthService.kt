@@ -24,6 +24,7 @@ class AuthService(
     private val emailVerificationService: EmailVerificationService
 ) {
 
+    @Transactional
     fun register(email: String, username: String, password: String): User {
         val trimmedEmail = email.trim()
         val user = userRepository.findByEmailOrUsername(
@@ -31,8 +32,6 @@ class AuthService(
             username = username.trim()
         )
         if (user != null) throw UserAlreadyExistsException()
-
-        val emailVerificationToken = emailVerificationService.createVerificationToken(email = trimmedEmail)
 
         // jpa will create id, createdAt, updatedAt
         val newUser =
@@ -42,7 +41,11 @@ class AuthService(
                 password = passwordEncoder.encode(password)
             )
         // upsert
-        val savedUser = userRepository.save(newUser).toUser()
+        // saveAndFlush -> make result be available for the rest of the functions that depends
+        // on it like "createVerificationToken" in transaction style
+        val savedUser = userRepository.saveAndFlush(newUser).toUser()
+
+        val emailVerificationToken = emailVerificationService.createVerificationToken(email = trimmedEmail)
 
         return savedUser
     }
