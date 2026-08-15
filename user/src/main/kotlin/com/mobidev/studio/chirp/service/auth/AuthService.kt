@@ -54,7 +54,7 @@ class AuthService(
         if (!passwordEncoder.matches(password, user.password))
             throw InvalidCredentialsException()
 
-        //TODO: check email verification
+        if(!user.hasVerifiedEmail) throw EmailNotVerifiedException()
 
         val tokens = user.id?.let { userId ->
             val accessToken = jwtService.generateAccessToken(userId = userId)
