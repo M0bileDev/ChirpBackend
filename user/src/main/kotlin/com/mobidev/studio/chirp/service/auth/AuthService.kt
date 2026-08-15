@@ -1,9 +1,6 @@
 package com.mobidev.studio.chirp.service.auth
 
-import com.mobidev.studio.chirp.domain.exception.InvalidCredentialsException
-import com.mobidev.studio.chirp.domain.exception.InvalidTokenException
-import com.mobidev.studio.chirp.domain.exception.UserAlreadyExistsException
-import com.mobidev.studio.chirp.domain.exception.UserNotFoundException
+import com.mobidev.studio.chirp.domain.exception.*
 import com.mobidev.studio.chirp.domain.model.*
 import com.mobidev.studio.chirp.infra.database.entities.RefreshTokenEntity
 import com.mobidev.studio.chirp.infra.database.entities.UserEntity
@@ -23,12 +20,15 @@ class AuthService(
     private val userRepository: UserRepository,
     private val passwordEncoder: PasswordEncoder,
     private val jwtService: JwtService,
-    private val refreshTokenRepository: RefreshTokenRepository
+    private val refreshTokenRepository: RefreshTokenRepository,
+    private val emailVerificationService: EmailVerificationService
 ) {
 
+    @Transactional
     fun register(email: String, username: String, password: String): User {
+        val trimmedEmail = email.trim()
         val user = userRepository.findByEmailOrUsername(
-            email = email.trim(),
+            email = trimmedEmail,
             username = username.trim()
         )
         if (user != null) throw UserAlreadyExistsException()
@@ -36,12 +36,16 @@ class AuthService(
         // jpa will create id, createdAt, updatedAt
         val newUser =
             UserEntity(
-                email = email.trim(),
+                email = trimmedEmail,
                 username = username.trim(),
                 password = passwordEncoder.encode(password)
             )
         // upsert
-        val savedUser = userRepository.save(newUser).toUser()
+        // saveAndFlush -> make result be available for the rest of the functions that depends
+        // on it like "createVerificationToken" in transaction style
+        val savedUser = userRepository.saveAndFlush(newUser).toUser()
+
+        val emailVerificationToken = emailVerificationService.createVerificationToken(email = trimmedEmail)
 
         return savedUser
     }
@@ -53,7 +57,7 @@ class AuthService(
         if (!passwordEncoder.matches(password, user.password))
             throw InvalidCredentialsException()
 
-        //TODO: check email verification
+        if(!user.hasVerifiedEmail) throw EmailNotVerifiedException()
 
         val tokens = user.id?.let { userId ->
             val accessToken = jwtService.generateAccessToken(userId = userId)
