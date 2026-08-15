@@ -1,5 +1,6 @@
 package com.mobidev.studio.chirp.api.exception_handling
 
+import com.mobidev.studio.chirp.domain.exception.EmailNotVerifiedException
 import com.mobidev.studio.chirp.domain.exception.InvalidCredentialsException
 import com.mobidev.studio.chirp.domain.exception.InvalidTokenException
 import com.mobidev.studio.chirp.domain.exception.UserAlreadyExistsException
@@ -70,6 +71,15 @@ class AuthExceptionHandler {
         e: InvalidCredentialsException
     ) = mapOf(
         "code" to "INVALID_CREDENTIALS",
+        "message" to e.message
+    )
+
+    @ExceptionHandler(EmailNotVerifiedException::class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    fun onEmailNotVerified(
+        e: EmailNotVerifiedException
+    ) = mapOf(
+        "code" to "EMAIL_NOT_VERIFIED",
         "message" to e.message
     )
 }
