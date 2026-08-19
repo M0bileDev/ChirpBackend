@@ -13,6 +13,7 @@ import com.mobidev.studio.chirp.infra.security.PasswordEncoder
 import jakarta.transaction.Transactional
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.repository.findByIdOrNull
+import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -91,5 +92,12 @@ class PasswordResetService(
         val newHashedPassword = passwordEncoder.encode(newPassword)
         val updatedUser = user.apply { this.password = newHashedPassword }
         userRepository.save(updatedUser)
+    }
+
+    @Scheduled(cron = "0 0 3 * * *")
+    fun cleanupExpiredTokensTask(){
+        val now = Instant.now()
+
+        passwordResetTokenRepository.deleteByExpiresAtLessThan(now)
     }
 }
