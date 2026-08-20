@@ -16,7 +16,7 @@ interface PasswordResetTokenRepository: JpaRepository<PasswordResetTokenEntity, 
     @Modifying
     @Query("""
         UPDATE PasswordResetTokenEntity entity
-        SET entity.used_at = CURRENT_TIMESTAMP
+        SET entity.usedAt = CURRENT_TIMESTAMP
         WHERE entity.user = :user
     """)
     fun invalidateActiveTokensForUser(user: UserEntity)
