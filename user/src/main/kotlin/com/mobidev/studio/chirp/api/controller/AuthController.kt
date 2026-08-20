@@ -4,6 +4,7 @@ import com.mobidev.studio.chirp.api.dto.AuthenticatedUserDto
 import com.mobidev.studio.chirp.api.dto.UserDto
 import com.mobidev.studio.chirp.api.mappers.toAuthenticatedUserDto
 import com.mobidev.studio.chirp.api.mappers.toUserDto
+import com.mobidev.studio.chirp.api.request.ChangePasswordRequest
 import com.mobidev.studio.chirp.api.request.LoginRequest
 import com.mobidev.studio.chirp.api.request.RefreshRequest
 import com.mobidev.studio.chirp.api.request.RegisterRequest
@@ -74,5 +75,12 @@ class AuthController(
             token = body.token,
             newPassword = body.newPassword
         )
+    }
+
+    @PostMapping("/change-password")
+    fun changePassword(
+        @Valid @RequestBody body: ChangePasswordRequest
+    ) {
+        // TODO: extract request user ID and call service (security principles)
     }
 }
