@@ -4,11 +4,7 @@ import com.mobidev.studio.chirp.api.dto.AuthenticatedUserDto
 import com.mobidev.studio.chirp.api.dto.UserDto
 import com.mobidev.studio.chirp.api.mappers.toAuthenticatedUserDto
 import com.mobidev.studio.chirp.api.mappers.toUserDto
-import com.mobidev.studio.chirp.api.request.ChangePasswordRequest
-import com.mobidev.studio.chirp.api.request.LoginRequest
-import com.mobidev.studio.chirp.api.request.RefreshRequest
-import com.mobidev.studio.chirp.api.request.RegisterRequest
-import com.mobidev.studio.chirp.api.request.ResetPasswordRequest
+import com.mobidev.studio.chirp.api.request.*
 import com.mobidev.studio.chirp.service.auth.AuthService
 import com.mobidev.studio.chirp.service.auth.EmailVerificationService
 import com.mobidev.studio.chirp.service.auth.PasswordResetService
@@ -65,6 +61,15 @@ class AuthController(
         @RequestParam token: String
     ) {
         emailVerificationService.verifyEmail(token)
+    }
+
+    @PostMapping("/forgot-password")
+    fun forgotPassword(
+        @Valid @RequestBody body: EmailRequest
+    ) {
+        passwordResetService.requestPasswordReset(
+            email = body.email
+        )
     }
 
     @PostMapping("/reset-password")
