@@ -15,7 +15,7 @@ interface EmailVerificationTokenRepository: JpaRepository<EmailVerificationToken
     @Modifying
     @Query("""
         UPDATE EmailVerificationTokenEntity entity
-        SET entity.used_at = CURRENT_TIMESTAMP
+        SET entity.usedAt = CURRENT_TIMESTAMP
         WHERE entity.user = :user
     """)
     fun invalidateActiveTokensForUser(user: UserEntity)
