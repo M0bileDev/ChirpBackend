@@ -56,14 +56,14 @@ class PasswordResetService(
         }
 
         val user = resetToken.user
-        val hashedNewPassword = passwordEncoder.encode(newPassword)
-        if (passwordEncoder.matches(hashedNewPassword, user.password)) {
+        if (passwordEncoder.matches(newPassword, user.password)) {
             throw SamePasswordException()
         }
 
         val updatedToken = resetToken.apply { usedAt = Instant.now() }
         passwordResetTokenRepository.save(updatedToken)
 
+        val hashedNewPassword = passwordEncoder.encode(newPassword)
         val updatedUser = user.apply { this.password = hashedNewPassword }
         userRepository.save(updatedUser)
 
