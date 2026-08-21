@@ -15,4 +15,6 @@ dependencies {
     runtimeOnly(libs.postgresql)
 
     implementation(libs.spring.boot.starter.security)
+    implementation(libs.spring.boot.starter.redis)
+
 }
