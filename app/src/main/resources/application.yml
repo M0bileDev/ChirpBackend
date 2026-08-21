@@ -2,6 +2,15 @@ spring:
   application:
     name: chirp
 
+  data:
+    redis:
+      host: "biophilic-sweetish-water-57828.db.redis.io"
+      password: ${REDIS_PASSWORD}
+      username: "default"
+      port: 15867
+      connect-timeout: 5000ms
+      timeout: 2000ms
+
   datasource:
     url: jdbc:postgresql://db.ehsemazmuqmwxemmlaqa.supabase.co:5432/postgres
     username: postgres
