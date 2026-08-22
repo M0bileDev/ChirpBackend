@@ -29,7 +29,8 @@ dependencies {
     runtimeOnly(libs.jwt.impl)
     // enables serialization
     runtimeOnly(libs.jwt.jackson)
-
+    // redis template
+    implementation(libs.spring.boot.starter.redis)
     testImplementation(kotlin("test"))
 }
 
