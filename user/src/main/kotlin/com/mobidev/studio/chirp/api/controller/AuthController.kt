@@ -5,6 +5,7 @@ import com.mobidev.studio.chirp.api.dto.UserDto
 import com.mobidev.studio.chirp.api.mappers.toAuthenticatedUserDto
 import com.mobidev.studio.chirp.api.mappers.toUserDto
 import com.mobidev.studio.chirp.api.request.*
+import com.mobidev.studio.chirp.infra.rate_limiting.EmailRateLimiter
 import com.mobidev.studio.chirp.service.auth.AuthService
 import com.mobidev.studio.chirp.service.auth.EmailVerificationService
 import com.mobidev.studio.chirp.service.auth.PasswordResetService
@@ -16,7 +17,8 @@ import org.springframework.web.bind.annotation.*
 class AuthController(
     private val authService: AuthService,
     private val emailVerificationService: EmailVerificationService,
-    private val passwordResetService: PasswordResetService
+    private val passwordResetService: PasswordResetService,
+    private val emailRateLimiter: EmailRateLimiter
 ) {
 
     @PostMapping("/register")
@@ -87,5 +89,16 @@ class AuthController(
         @Valid @RequestBody body: ChangePasswordRequest
     ) {
         // TODO: extract request user ID and call service (security principles)
+    }
+
+    @PostMapping("/resend-verification")
+    fun resendVerification(
+        @Valid @RequestBody body: EmailRequest
+    ) {
+        emailRateLimiter.withRateLimit(
+            email = body.email
+        ) {
+            emailVerificationService.resendEmailVerificationEmail(email = body.email)
+        }
     }
 }
