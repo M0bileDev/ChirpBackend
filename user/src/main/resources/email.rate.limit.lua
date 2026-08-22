@@ -23,3 +23,13 @@ local newCount = redis.call('INCR', attemptCountKey)
 local backoffSeconds = { 60, 300, 3600 }
 --take minimal value between current count and maximum value from array (the last one)
 local backoffIndex = math.min(currentCount, 2) + 1
+
+--set expiration for rate limit key
+--1 servers like a lock -> user is rate limited
+--SETEX set expiration time and value, EXPIRE sets only expiration time
+redis.call('SETEX', rateLimitKey, backoffSeconds[backoffIndex], '1')
+--86400 -> 24h
+redis.call('EXPIRE', attemptCountKey, 86400)
+
+--user is not rate limited
+return { newCount, 0 }
