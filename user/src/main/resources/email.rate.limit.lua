@@ -17,3 +17,9 @@ local currentCount = redis.call('GET', attemptCountKey)
 --convert to number, 0 as default
 currentCount = currentCount and tonumber(currentCount) or 0
 
+local newCount = redis.call('INCR', attemptCountKey)
+
+--first attempt 60 seconds, next is 300 sec, and finally 1 hour
+local backoffSeconds = { 60, 300, 3600 }
+--take minimal value between current count and maximum value from array (the last one)
+local backoffIndex = math.min(currentCount, 2) + 1
