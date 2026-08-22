@@ -11,3 +11,9 @@ if redis.call('EXISTS', rateLimitKey) == 1 then
     --  ttl > 0 and ttl or 60 -> if ttl is greater than 0 return ttl or 60 seconds (default)
     return { -1, ttl > 0 and ttl or 60 }
 end
+
+-- user not rate limited
+local currentCount = redis.call('GET', attemptCountKey)
+--convert to number, 0 as default
+currentCount = currentCount and tonumber(currentCount) or 0
+
