@@ -1,5 +1,6 @@
 package com.mobidev.studio.chirp.infra.rate_limiting
 
+import com.mobidev.studio.chirp.domain.exception.RateLimitException
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.io.Resource
 import org.springframework.data.redis.core.StringRedisTemplate
@@ -31,5 +32,30 @@ class EmailRateLimiter(
         }
         @Suppress("UNCHECKED_CAST")
         DefaultRedisScript(script, List::class.java as Class<List<Long>>)
+    }
+
+    fun withRateLimit(
+        email: String,
+        action: () -> Unit
+    ) {
+        val normalizedEmail = email.lowercase().trim()
+        val rateLimitKey = "$EMAIL_RATE_LIMIT_PREFIX:$normalizedEmail"
+        val attemptCountKey = "$EMAIL_ATTEMPT_COUNT_PREFIX:$normalizedEmail"
+
+        val result = redisTemplate.execute(
+            rateLimitScript,
+            listOf(rateLimitKey, attemptCountKey)
+        )
+
+        val attemptCount = result[0]
+        val ttl = result[1]
+
+        // email has been rate limited
+        if (attemptCount == -1L) {
+            throw RateLimitException(resetsInSeconds = ttl)
+        }
+
+        //user not rate limited, perform action
+        action()
     }
 }
