@@ -63,4 +63,8 @@ class EmailVerificationService(
 
         emailVerificationTokenRepository.deleteByExpiresAtLessThan(now)
     }
+
+    fun resendEmailVerificationEmail(email: String){
+        //todo: trigger resend
+    }
 }
