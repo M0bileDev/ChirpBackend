@@ -18,6 +18,14 @@ class IpResolver(
             "::1/128",
             "fc00::/7",
             "fe80::/10"
-        ).map { IpAddressMatcher(it) }
+        ).map { ipAddress -> IpAddressMatcher(ipAddress) }
+
+        // list of ip to ignore
+        private val INVALID_IPS = listOf(
+            "unknown",
+            "unavailable",
+            "0.0.0.0",
+            "::"
+        )
     }
 }
