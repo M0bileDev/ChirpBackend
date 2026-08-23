@@ -17,28 +17,28 @@ spring:
     password: ${POSTGRES_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
-#    Tool for db connection managing
+    #    Tool for db connection managing
     hikari:
-#      maximum amount of connection pool
+      #      maximum amount of connection pool
       maximum-pool-size: 10
-#      always, at least 5 open connections
+      #      always, at least 5 open connections
       minimum-idle: 5
-#      timeout, after connection with be finished
+      #      timeout, after connection with be finished
       connection-timeout: 20000
-#      fow how long connection can stay in idle
+      #      fow how long connection can stay in idle
       idle-timeout: 300000
-#      for how long connection can be established
+      #      for how long connection can be established
       max-lifetime: 12000000
-#      validation query timeout
+      #      validation query timeout
       validation-timeout: 5000
       pool-name: SpringBootHikariCP
-#      properties specific to database that is in use like postgres
+      #      properties specific to database that is in use like postgres
       data-source-properties:
-#        how many times query has to be executed to prepare statement
+        #        how many times query has to be executed to prepare statement
         prepareThreshold: 5
-#        how many queries should be prepared in cache
+        #        how many queries should be prepared in cache
         preparedStatementCacheQueries: 256
-#        define size for cached queries
+        #        define size for cached queries
         preparedStatementCacheSizeMiB: 5
 
         tcpKeepAlive: true
@@ -47,9 +47,9 @@ spring:
 
   jpa:
     properties:
-#      jpa implementation
+      #      jpa implementation
       hibernate:
-#        sql type
+        #        sql type
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
         show_sql: true
@@ -63,3 +63,15 @@ chirp:
       expiry-hours: 24
     reset-password:
       expiry-minutes: 30
+
+nginx:
+  trusted-ips:
+    #   nginx working on the same machine, localhost v4
+    - "127.0.0.1"
+    #   nginx working on the same machine, localhost v6
+    - "::1"
+    #   first 16 bits are locked (172.17.x.x), rest is flexible, (/16 -> ip range)
+    #   nginx container IP when using Docker
+    - "172.17.0.0/16"
+    #   nginx server ip (is separate machine)
+    - "10.0.0.5/32"
