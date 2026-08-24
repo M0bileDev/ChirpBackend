@@ -51,4 +51,8 @@ class IpResolver(
     private fun isPrivateIp(ipAddress: String): Boolean {
         return PRIVATE_IP_RANGES.any { privateAddress -> privateAddress.matches(ipAddress) }
     }
+
+    private fun isFromTrustedProxy(ipAddress: String): Boolean {
+        return trustedMatchers.any { trustedAddress -> trustedAddress.matches(ipAddress) }
+    }
 }
