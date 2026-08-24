@@ -1,8 +1,11 @@
 package com.mobidev.studio.chirp.infra.ip_resolver
 
 import com.mobidev.studio.chirp.infra.config.NginxConfig
+import org.slf4j.LoggerFactory
 import org.springframework.security.web.util.matcher.IpAddressMatcher
 import org.springframework.stereotype.Component
+import java.net.Inet4Address
+import java.net.Inet6Address
 
 @Component
 class IpResolver(
@@ -48,6 +51,40 @@ class IpResolver(
                 IpAddressMatcher(cidr)
             }
 
+    private val logger = LoggerFactory.getLogger(IpResolver::class.java)
+
+    private fun validateAndNormalizeIp(ip: String, headerName: String, proxyIp: String): String? {
+        val trimmedIp = ip.trim()
+
+        if (trimmedIp.isBlank() || INVALID_IPS.contains(trimmedIp)) {
+            logger.debug("Invalid IP in $headerName: $ip from proxy $proxyIp")
+            return null
+        }
+
+        return try {
+            val inetAddr = when {
+                trimmedIp.contains(":") -> Inet6Address.getByName(trimmedIp)
+                trimmedIp.matches(Regex("\\d+\\.\\d+\\.\\d+\\.\\d+")) ->
+                    Inet4Address.getByName(trimmedIp)
+
+                else -> {
+                    logger.warn("Invalid IP format in $headerName: $trimmedIp from $proxyIp")
+                    return null
+                }
+            }
+
+            // Not security concern, just let know that it comes from range of private addresses
+            if (isPrivateIp(inetAddr.hostAddress)) {
+                logger.debug("Private IP in $headerName: $trimmedIp from proxy $proxyIp")
+            }
+
+            inetAddr.hostAddress
+        } catch (e: Exception) {
+            logger.warn("Invalid IP format in $headerName: $trimmedIp from proxy $proxyIp", e)
+            null
+        }
+    }
+
     private fun isPrivateIp(ipAddress: String): Boolean {
         return PRIVATE_IP_RANGES.any { privateAddress -> privateAddress.matches(ipAddress) }
     }
@@ -55,4 +92,6 @@ class IpResolver(
     private fun isFromTrustedProxy(ipAddress: String): Boolean {
         return trustedMatchers.any { trustedAddress -> trustedAddress.matches(ipAddress) }
     }
+
+
 }
