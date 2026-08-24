@@ -1,8 +1,12 @@
 package com.mobidev.studio.chirp.infra.ip_resolver
 
 import com.mobidev.studio.chirp.infra.config.NginxConfig
+import jakarta.servlet.http.HttpServletRequest
+import org.slf4j.LoggerFactory
 import org.springframework.security.web.util.matcher.IpAddressMatcher
 import org.springframework.stereotype.Component
+import java.net.Inet4Address
+import java.net.Inet6Address
 
 @Component
 class IpResolver(
@@ -27,6 +31,8 @@ class IpResolver(
             "0.0.0.0",
             "::"
         )
+
+        private const val X_REAL_IP = "X-Real-IP"
     }
 
     private val trustedMatchers: List<IpAddressMatcher> =
@@ -47,4 +53,83 @@ class IpResolver(
 
                 IpAddressMatcher(cidr)
             }
+
+    private val logger = LoggerFactory.getLogger(IpResolver::class.java)
+
+    fun getClientIp(request: HttpServletRequest): String {
+        // address from the last position of the connection chain
+        val remoteAddress = request.remoteAddr
+
+        if (!isFromTrustedProxy(remoteAddress)) {
+            if (nginxConfig.requireProxy) {
+                logger.warn("Direct connection attempt from $remoteAddress")
+                throw SecurityException("No valid client IP in proxy headers.")
+            }
+
+            //proxy not required, coming for development environment
+            return remoteAddress
+        }
+
+        //trusted ip, nginx forwarded address to backend
+        val clientIp = extractFromXRealIp(request = request, proxyIp = remoteAddress)
+
+        if (clientIp == null) {
+            logger.warn("No valid client IP in proxy headers.")
+
+            if (nginxConfig.requireProxy) {
+                // client may have to try call endpoint directly on backend
+                throw SecurityException("No valid client IP in proxy headers.")
+            }
+        }
+
+        return clientIp ?: remoteAddress
+    }
+
+    private fun extractFromXRealIp(request: HttpServletRequest, proxyIp: String): String? {
+        return request.getHeader(X_REAL_IP)?.let { header ->
+            validateAndNormalizeIp(header, X_REAL_IP, proxyIp)
+        }
+    }
+
+    private fun validateAndNormalizeIp(ip: String, headerName: String, proxyIp: String): String? {
+        val trimmedIp = ip.trim()
+
+        if (trimmedIp.isBlank() || INVALID_IPS.contains(trimmedIp)) {
+            logger.debug("Invalid IP in $headerName: $ip from proxy $proxyIp")
+            return null
+        }
+
+        return try {
+            val inetAddr = when {
+                trimmedIp.contains(":") -> Inet6Address.getByName(trimmedIp)
+                trimmedIp.matches(Regex("\\d+\\.\\d+\\.\\d+\\.\\d+")) ->
+                    Inet4Address.getByName(trimmedIp)
+
+                else -> {
+                    logger.warn("Invalid IP format in $headerName: $trimmedIp from $proxyIp")
+                    return null
+                }
+            }
+
+            // Not security concern, just let know that it comes from range of private addresses
+            if (isPrivateIp(inetAddr.hostAddress)) {
+                logger.debug("Private IP in $headerName: $trimmedIp from proxy $proxyIp")
+            }
+
+            inetAddr.hostAddress
+        } catch (e: Exception) {
+            logger.warn("Invalid IP format in $headerName: $trimmedIp from proxy $proxyIp", e)
+            null
+        }
+    }
+
+    private fun isPrivateIp(ipAddress: String): Boolean {
+        return PRIVATE_IP_RANGES.any { privateAddress -> privateAddress.matches(ipAddress) }
+    }
+
+    private fun isFromTrustedProxy(ipAddress: String): Boolean {
+        return trustedMatchers.any { trustedAddress -> trustedAddress.matches(ipAddress) }
+    }
+
+
 }
