@@ -1,6 +1,7 @@
 package com.mobidev.studio.chirp.infra.ip_resolver
 
 import com.mobidev.studio.chirp.infra.config.NginxConfig
+import jakarta.servlet.http.HttpServletRequest
 import org.slf4j.LoggerFactory
 import org.springframework.security.web.util.matcher.IpAddressMatcher
 import org.springframework.stereotype.Component
@@ -30,6 +31,8 @@ class IpResolver(
             "0.0.0.0",
             "::"
         )
+
+        private const val X_REAL_IP = "X-Real-IP"
     }
 
     private val trustedMatchers: List<IpAddressMatcher> =
@@ -52,6 +55,12 @@ class IpResolver(
             }
 
     private val logger = LoggerFactory.getLogger(IpResolver::class.java)
+
+    private fun extractFromXRealIp(request: HttpServletRequest, proxyIp: String): String? {
+        return request.getHeader(X_REAL_IP)?.let { header ->
+            validateAndNormalizeIp(header, X_REAL_IP, proxyIp)
+        }
+    }
 
     private fun validateAndNormalizeIp(ip: String, headerName: String, proxyIp: String): String? {
         val trimmedIp = ip.trim()
