@@ -47,4 +47,8 @@ class IpResolver(
 
                 IpAddressMatcher(cidr)
             }
+
+    private fun isPrivateIp(ipAddress: String): Boolean {
+        return PRIVATE_IP_RANGES.any { privateAddress -> privateAddress.matches(ipAddress) }
+    }
 }
