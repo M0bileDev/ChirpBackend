@@ -56,6 +56,35 @@ class IpResolver(
 
     private val logger = LoggerFactory.getLogger(IpResolver::class.java)
 
+    fun getClientIp(request: HttpServletRequest): String {
+        // address from the last position of the connection chain
+        val remoteAddress = request.remoteAddr
+
+        if (!isFromTrustedProxy(remoteAddress)) {
+            if (nginxConfig.requireProxy) {
+                logger.warn("Direct connection attempt from $remoteAddress")
+                throw SecurityException("No valid client IP in proxy headers.")
+            }
+
+            //proxy not required, coming for development environment
+            return remoteAddress
+        }
+
+        //trusted ip, nginx forwarded address to backend
+        val clientIp = extractFromXRealIp(request = request, proxyIp = remoteAddress)
+
+        if (clientIp == null) {
+            logger.warn("No valid client IP in proxy headers.")
+
+            if (nginxConfig.requireProxy) {
+                // client may have to try call endpoint directly on backend
+                throw SecurityException("No valid client IP in proxy headers.")
+            }
+        }
+
+        return clientIp ?: remoteAddress
+    }
+
     private fun extractFromXRealIp(request: HttpServletRequest, proxyIp: String): String? {
         return request.getHeader(X_REAL_IP)?.let { header ->
             validateAndNormalizeIp(header, X_REAL_IP, proxyIp)
