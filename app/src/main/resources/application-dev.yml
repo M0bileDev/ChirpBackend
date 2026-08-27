@@ -11,3 +11,8 @@ jwt:
 nginx:
   #  request is not coming from the proxy (nginx)
   require-proxy: false
+
+chirp:
+  rate-limit:
+    ip:
+      apply-limit: false
