@@ -5,8 +5,10 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.io.Resource
 import org.springframework.data.redis.core.StringRedisTemplate
 import org.springframework.data.redis.core.script.DefaultRedisScript
+import org.springframework.stereotype.Component
 import java.time.Duration
 
+@Component
 class IpRateLimiter(
     private val redisTemplate: StringRedisTemplate
 ) {
@@ -34,10 +36,11 @@ class IpRateLimiter(
         action: () -> T
     ): T {
         val key = "$IP_RATE_LIMIT_PREFIX:$ipAddress"
+        val ttlSeconds = resetsIn.seconds.coerceAtLeast(1)
         val result = redisTemplate.execute(
             rateLimitScript,
             listOf(key),
-            maxRequestPerIp.toString(), resetsIn.toString()
+            maxRequestPerIp.toString(), ttlSeconds.toString()
         )
         val currentCount = result[0]
 
