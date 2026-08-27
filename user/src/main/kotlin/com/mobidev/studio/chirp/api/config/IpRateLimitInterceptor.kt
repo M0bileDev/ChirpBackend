@@ -23,7 +23,7 @@ class IpRateLimitInterceptor(
     override fun preHandle(
         request: HttpServletRequest,
         response: HttpServletResponse,
-        handler: Any?
+        handler: Any
     ): Boolean {
         // check if the root function is annotated with custom annotation of @IpRateLimit and if so apply ip rate limit
 
