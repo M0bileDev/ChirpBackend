@@ -35,5 +35,8 @@ class JwtAuthFilter(
                 SecurityContextHolder.getContext().authentication = auth
             }
         }
+
+        // pass the request and response to the next filter / or finally execute this request
+        filterChain.doFilter(request, response)
     }
 }
