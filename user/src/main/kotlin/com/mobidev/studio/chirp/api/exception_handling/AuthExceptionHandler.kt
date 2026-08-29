@@ -5,6 +5,7 @@ import com.mobidev.studio.chirp.domain.exception.InvalidCredentialsException
 import com.mobidev.studio.chirp.domain.exception.InvalidTokenException
 import com.mobidev.studio.chirp.domain.exception.RateLimitException
 import com.mobidev.studio.chirp.domain.exception.SamePasswordException
+import com.mobidev.studio.chirp.domain.exception.UnauthorizedException
 import com.mobidev.studio.chirp.domain.exception.UserAlreadyExistsException
 import com.mobidev.studio.chirp.domain.exception.UserNotFoundException
 import org.springframework.http.HttpStatus
@@ -100,6 +101,15 @@ class AuthExceptionHandler {
         e: RateLimitException
     ) = mapOf(
         "code" to "RATE_LIMIT_EXCEEDED",
+        "message" to e.message
+    )
+
+    @ExceptionHandler(UnauthorizedException::class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    fun onUnauthorized(
+        e: UnauthorizedException
+    ) = mapOf(
+        "code" to "UNAUTHORIZED",
         "message" to e.message
     )
 }

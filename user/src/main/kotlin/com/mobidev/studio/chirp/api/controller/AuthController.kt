@@ -6,6 +6,7 @@ import com.mobidev.studio.chirp.api.dto.UserDto
 import com.mobidev.studio.chirp.api.mappers.toAuthenticatedUserDto
 import com.mobidev.studio.chirp.api.mappers.toUserDto
 import com.mobidev.studio.chirp.api.request.*
+import com.mobidev.studio.chirp.api.util.requestUserId
 import com.mobidev.studio.chirp.infra.rate_limiting.EmailRateLimiter
 import com.mobidev.studio.chirp.service.auth.AuthService
 import com.mobidev.studio.chirp.service.auth.EmailVerificationService
@@ -105,7 +106,11 @@ class AuthController(
     fun changePassword(
         @Valid @RequestBody body: ChangePasswordRequest
     ) {
-        // TODO: extract request user ID and call service (security principles)
+        passwordResetService.changePassword(
+            userId = requestUserId,
+            oldPassword = body.oldPassword,
+            newPassword = body.newPassword,
+        )
     }
 
     @PostMapping("/resend-verification")
