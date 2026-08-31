@@ -8,4 +8,6 @@ sealed class UserEvent(
     override val eventId: String = UUID.randomUUID().toString(),
     override val exchange: String = UserEventConstants.USER_EXCHANGE,
     override val occurredAt: Instant = Instant.now(),
-) : ChirpEvent
+) : ChirpEvent{
+
+}

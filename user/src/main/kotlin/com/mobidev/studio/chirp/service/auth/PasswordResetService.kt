@@ -4,7 +4,7 @@ import com.mobidev.studio.chirp.domain.exception.InvalidCredentialsException
 import com.mobidev.studio.chirp.domain.exception.InvalidTokenException
 import com.mobidev.studio.chirp.domain.exception.SamePasswordException
 import com.mobidev.studio.chirp.domain.exception.UserNotFoundException
-import com.mobidev.studio.chirp.domain.model.UserId
+import com.mobidev.studio.chirp.domain.type.UserId
 import com.mobidev.studio.chirp.infra.database.entities.PasswordResetTokenEntity
 import com.mobidev.studio.chirp.infra.database.repositories.PasswordResetTokenRepository
 import com.mobidev.studio.chirp.infra.database.repositories.RefreshTokenRepository

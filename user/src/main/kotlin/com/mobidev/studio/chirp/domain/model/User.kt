@@ -1,8 +1,6 @@
 package com.mobidev.studio.chirp.domain.model
 
-import java.util.*
-
-typealias UserId = UUID
+import com.mobidev.studio.chirp.domain.type.UserId
 
 data class User(
     val id: UserId,

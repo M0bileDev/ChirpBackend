@@ -1,6 +1,6 @@
 package com.mobidev.studio.chirp.infra.database.repositories
 
-import com.mobidev.studio.chirp.domain.model.UserId
+import com.mobidev.studio.chirp.domain.type.UserId
 import com.mobidev.studio.chirp.infra.database.entities.UserEntity
 import org.springframework.data.jpa.repository.JpaRepository
 
