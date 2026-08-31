@@ -31,6 +31,9 @@ class SecurityConfig {
                 auth
                     .requestMatchers("/api/v1/auth/**")
                     .permitAll()
+                    // spring boot expects that this endpoint will have attached jwt token
+                    .requestMatchers("/api/v1/auth/change-password")
+                    .authenticated()
                     .dispatcherTypeMatchers(
                         DispatcherType.ERROR,
                         DispatcherType.FORWARD
