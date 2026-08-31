@@ -1,6 +1,6 @@
 package com.mobidev.studio.chirp.api.dto
 
-import com.mobidev.studio.chirp.domain.model.UserId
+import com.mobidev.studio.chirp.domain.type.UserId
 
 data class UserDto(
     val id: UserId,

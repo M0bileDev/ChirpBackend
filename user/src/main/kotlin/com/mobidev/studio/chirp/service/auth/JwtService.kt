@@ -1,7 +1,7 @@
 package com.mobidev.studio.chirp.service.auth
 
 import com.mobidev.studio.chirp.domain.exception.InvalidTokenException
-import com.mobidev.studio.chirp.domain.model.UserId
+import com.mobidev.studio.chirp.domain.type.UserId
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.Keys

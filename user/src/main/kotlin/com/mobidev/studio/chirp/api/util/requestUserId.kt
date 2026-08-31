@@ -1,7 +1,7 @@
 package com.mobidev.studio.chirp.api.util
 
 import com.mobidev.studio.chirp.domain.exception.UnauthorizedException
-import com.mobidev.studio.chirp.domain.model.UserId
+import com.mobidev.studio.chirp.domain.type.UserId
 import org.springframework.security.core.context.SecurityContextHolder
 
 val requestUserId : UserId

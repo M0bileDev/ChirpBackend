@@ -2,6 +2,7 @@ package com.mobidev.studio.chirp.service.auth
 
 import com.mobidev.studio.chirp.domain.exception.*
 import com.mobidev.studio.chirp.domain.model.*
+import com.mobidev.studio.chirp.domain.type.UserId
 import com.mobidev.studio.chirp.infra.database.entities.RefreshTokenEntity
 import com.mobidev.studio.chirp.infra.database.entities.UserEntity
 import com.mobidev.studio.chirp.infra.database.repositories.RefreshTokenRepository
