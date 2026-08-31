@@ -17,4 +17,6 @@ dependencies {
     implementation(libs.spring.boot.starter.security)
     implementation(libs.spring.boot.starter.redis)
 
+    // message queen dependency
+    implementation(libs.spring.boot.starter.amqp)
 }
