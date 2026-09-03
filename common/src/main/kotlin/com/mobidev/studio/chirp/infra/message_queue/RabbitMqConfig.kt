@@ -2,13 +2,14 @@ package com.mobidev.studio.chirp.infra.message_queue
 
 import com.mobidev.studio.chirp.domain.events.ChirpEvent
 import com.mobidev.studio.chirp.domain.events.user.UserEventConstants
+import org.springframework.amqp.core.Queue
 import org.springframework.amqp.core.TopicExchange
 import org.springframework.amqp.rabbit.connection.ConnectionFactory
 import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.amqp.support.converter.JacksonJavaTypeMapper
+import org.springframework.amqp.support.converter.JacksonJsonMessageConverter
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.amqp.support.converter.JacksonJsonMessageConverter
 import tools.jackson.databind.DefaultTyping
 import tools.jackson.databind.json.JsonMapper
 import tools.jackson.databind.jsontype.BasicPolymorphicTypeValidator
@@ -55,6 +56,7 @@ class RabbitMqConfig {
         }
     }
 
+    // centralized point for queue coordination
     @Bean
     fun userExchange() = TopicExchange(
         UserEventConstants.USER_EXCHANGE,
@@ -62,5 +64,12 @@ class RabbitMqConfig {
         true,
         // prevent auto deletion if there is no subscription
         false
+    )
+
+    // queue that notification service can listen to
+    @Bean
+    fun notificationUserEventsQueue() = Queue(
+        MessageQueues.NOTIFICATION_USER_EVENTS,
+        true
     )
 }
