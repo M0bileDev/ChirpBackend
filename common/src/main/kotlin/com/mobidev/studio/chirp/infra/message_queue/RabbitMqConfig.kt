@@ -1,10 +1,12 @@
 package com.mobidev.studio.chirp.infra.message_queue
 
 import com.mobidev.studio.chirp.domain.events.ChirpEvent
+import org.springframework.amqp.rabbit.connection.ConnectionFactory
+import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.amqp.support.converter.JacksonJavaTypeMapper
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.messaging.converter.JacksonJsonMessageConverter
+import org.springframework.amqp.support.converter.JacksonJsonMessageConverter
 import tools.jackson.databind.DefaultTyping
 import tools.jackson.databind.json.JsonMapper
 import tools.jackson.databind.jsontype.BasicPolymorphicTypeValidator
@@ -38,6 +40,16 @@ class RabbitMqConfig {
         return JacksonJsonMessageConverter(objectMapper).apply {
             // always trust type that is specified in the serialized message
             typePrecedence = JacksonJavaTypeMapper.TypePrecedence.TYPE_ID
+        }
+    }
+
+    @Bean
+    fun rabbitTemplate(
+        connectionFactory: ConnectionFactory,
+        messageConverter: JacksonJsonMessageConverter,
+    ): RabbitTemplate {
+        return RabbitTemplate(connectionFactory).apply {
+            this.messageConverter = messageConverter
         }
     }
 }
