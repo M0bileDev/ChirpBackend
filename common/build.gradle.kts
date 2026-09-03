@@ -16,6 +16,9 @@ dependencies {
     api(libs.jackson.module.kotlin)
 
     testImplementation(kotlin("test"))
+
+    //RabbitMQ dependencies
+    implementation(libs.spring.boot.starter.amqp)
 }
 
 tasks.test {
