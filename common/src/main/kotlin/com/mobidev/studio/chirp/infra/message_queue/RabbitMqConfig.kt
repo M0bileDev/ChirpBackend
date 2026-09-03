@@ -1,6 +1,8 @@
 package com.mobidev.studio.chirp.infra.message_queue
 
 import com.mobidev.studio.chirp.domain.events.ChirpEvent
+import com.mobidev.studio.chirp.domain.events.user.UserEventConstants
+import org.springframework.amqp.core.TopicExchange
 import org.springframework.amqp.rabbit.connection.ConnectionFactory
 import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.amqp.support.converter.JacksonJavaTypeMapper
@@ -52,4 +54,13 @@ class RabbitMqConfig {
             this.messageConverter = messageConverter
         }
     }
+
+    @Bean
+    fun userExchange() = TopicExchange(
+        UserEventConstants.USER_EXCHANGE,
+        // if rabbitmq should survive instance's restarts
+        true,
+        // prevent auto deletion if there is no subscription
+        false
+    )
 }
