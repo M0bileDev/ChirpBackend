@@ -56,7 +56,7 @@ spring:
 
   rabbitmq:
     host: swallow.lmq.cloudamqp.com
-    password: { RABBITMQ_PASSWORD }
+    password: ${RABBITMQ_PASSWORD}
     username: vrptxmcv
     ssl:
       enabled: true

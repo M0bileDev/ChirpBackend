@@ -2,20 +2,27 @@ package com.mobidev.studio.chirp.infra.message_queue
 
 import com.mobidev.studio.chirp.domain.events.ChirpEvent
 import com.mobidev.studio.chirp.domain.events.user.UserEventConstants
+import org.springframework.amqp.core.Binding
+import org.springframework.amqp.core.BindingBuilder
 import org.springframework.amqp.core.Queue
 import org.springframework.amqp.core.TopicExchange
+import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory
 import org.springframework.amqp.rabbit.connection.ConnectionFactory
 import org.springframework.amqp.rabbit.core.RabbitTemplate
 import org.springframework.amqp.support.converter.JacksonJavaTypeMapper
 import org.springframework.amqp.support.converter.JacksonJsonMessageConverter
+import org.springframework.boot.amqp.autoconfigure.SimpleRabbitListenerContainerFactoryConfigurer
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.transaction.PlatformTransactionManager
+import org.springframework.transaction.annotation.EnableTransactionManagement
 import tools.jackson.databind.DefaultTyping
 import tools.jackson.databind.json.JsonMapper
 import tools.jackson.databind.jsontype.BasicPolymorphicTypeValidator
 import tools.jackson.module.kotlin.kotlinModule
 
 @Configuration
+@EnableTransactionManagement
 class RabbitMqConfig {
 
     @Bean
@@ -40,7 +47,14 @@ class RabbitMqConfig {
             )
             .build()
 
-        return JacksonJsonMessageConverter(objectMapper).apply {
+        // the type mapper reading the __TypeId__ header trusts only java.util and java.lang
+        // by default, and matches packages exactly - so every package holding events has to
+        // be listed here, subpackages are not covered by their parent
+        return JacksonJsonMessageConverter(
+            objectMapper,
+            "com.mobidev.studio.chirp.domain.events",
+            "com.mobidev.studio.chirp.domain.events.user",
+        ).apply {
             // always trust type that is specified in the serialized message
             typePrecedence = JacksonJavaTypeMapper.TypePrecedence.TYPE_ID
         }
@@ -72,4 +86,29 @@ class RabbitMqConfig {
         MessageQueues.NOTIFICATION_USER_EVENTS,
         true
     )
+
+    @Bean
+    fun notificationUserEventsBinding(
+        notificationUserEventsQueue: Queue,
+        userExchange: TopicExchange
+    ): Binding {
+        return BindingBuilder
+            .bind(notificationUserEventsQueue)
+            .to(userExchange)
+            .with("user.*")
+    }
+
+    @Bean
+    fun rabbitListenerContainerFactory(
+        configurer: SimpleRabbitListenerContainerFactoryConfigurer,
+        connectionFactory: ConnectionFactory,
+        transactionManager: PlatformTransactionManager,
+    ): SimpleRabbitListenerContainerFactory {
+        return SimpleRabbitListenerContainerFactory().apply {
+            configurer.configure(this, connectionFactory)
+            this.setTransactionManager(transactionManager)
+            // prevent to process events when transaction was rolled back
+            this.setChannelTransacted(true)
+        }
+    }
 }
