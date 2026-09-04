@@ -2,6 +2,8 @@ package com.mobidev.studio.chirp.infra.message_queue
 
 import com.mobidev.studio.chirp.domain.events.ChirpEvent
 import com.mobidev.studio.chirp.domain.events.user.UserEventConstants
+import org.springframework.amqp.core.Binding
+import org.springframework.amqp.core.BindingBuilder
 import org.springframework.amqp.core.Queue
 import org.springframework.amqp.core.TopicExchange
 import org.springframework.amqp.rabbit.connection.ConnectionFactory
@@ -40,7 +42,14 @@ class RabbitMqConfig {
             )
             .build()
 
-        return JacksonJsonMessageConverter(objectMapper).apply {
+        // the type mapper reading the __TypeId__ header trusts only java.util and java.lang
+        // by default, and matches packages exactly - so every package holding events has to
+        // be listed here, subpackages are not covered by their parent
+        return JacksonJsonMessageConverter(
+            objectMapper,
+            "com.mobidev.studio.chirp.domain.events",
+            "com.mobidev.studio.chirp.domain.events.user",
+        ).apply {
             // always trust type that is specified in the serialized message
             typePrecedence = JacksonJavaTypeMapper.TypePrecedence.TYPE_ID
         }
@@ -72,4 +81,15 @@ class RabbitMqConfig {
         MessageQueues.NOTIFICATION_USER_EVENTS,
         true
     )
+
+    @Bean
+    fun notificationUserEventsBinding(
+        notificationUserEventsQueue: Queue,
+        userExchange: TopicExchange
+    ): Binding {
+        return BindingBuilder
+            .bind(notificationUserEventsQueue)
+            .to(userExchange)
+            .with("user.*")
+    }
 }
