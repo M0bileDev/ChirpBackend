@@ -9,9 +9,9 @@ import org.springframework.amqp.core.TopicExchange
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory
 import org.springframework.amqp.rabbit.connection.ConnectionFactory
 import org.springframework.amqp.rabbit.core.RabbitTemplate
-import org.springframework.amqp.rabbit.listener.RabbitListenerContainerFactory
 import org.springframework.amqp.support.converter.JacksonJavaTypeMapper
 import org.springframework.amqp.support.converter.JacksonJsonMessageConverter
+import org.springframework.boot.amqp.autoconfigure.SimpleRabbitListenerContainerFactoryConfigurer
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.transaction.PlatformTransactionManager
@@ -100,11 +100,12 @@ class RabbitMqConfig {
 
     @Bean
     fun rabbitListenerContainerFactory(
+        configurer: SimpleRabbitListenerContainerFactoryConfigurer,
         connectionFactory: ConnectionFactory,
         transactionManager: PlatformTransactionManager,
     ): SimpleRabbitListenerContainerFactory {
         return SimpleRabbitListenerContainerFactory().apply {
-            this.setConnectionFactory(connectionFactory)
+            configurer.configure(this, connectionFactory)
             this.setTransactionManager(transactionManager)
             // prevent to process events when transaction was rolled back
             this.setChannelTransacted(true)
