@@ -125,7 +125,7 @@ class AuthController(
         emailRateLimiter.withRateLimit(
             email = body.email
         ) {
-            emailVerificationService.resendEmailVerificationEmail(email = body.email)
+            emailVerificationService.resendVerificationEmail(email = body.email)
         }
     }
 }

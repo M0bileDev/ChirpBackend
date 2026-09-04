@@ -1,13 +1,18 @@
 package com.mobidev.studio.chirp.service.auth
 
+import com.mobidev.studio.chirp.domain.events.user.UserEvent
 import com.mobidev.studio.chirp.domain.exception.*
-import com.mobidev.studio.chirp.domain.model.*
+import com.mobidev.studio.chirp.domain.model.AccessToken
+import com.mobidev.studio.chirp.domain.model.AuthenticatedUser
+import com.mobidev.studio.chirp.domain.model.RefreshToken
+import com.mobidev.studio.chirp.domain.model.User
 import com.mobidev.studio.chirp.domain.type.UserId
 import com.mobidev.studio.chirp.infra.database.entities.RefreshTokenEntity
 import com.mobidev.studio.chirp.infra.database.entities.UserEntity
 import com.mobidev.studio.chirp.infra.database.repositories.RefreshTokenRepository
 import com.mobidev.studio.chirp.infra.database.repositories.UserRepository
 import com.mobidev.studio.chirp.infra.mappers.toUser
+import com.mobidev.studio.chirp.infra.message_queue.EventPublisher
 import com.mobidev.studio.chirp.infra.security.PasswordEncoder
 import jakarta.transaction.Transactional
 import org.springframework.data.repository.findByIdOrNull
@@ -22,7 +27,8 @@ class AuthService(
     private val passwordEncoder: PasswordEncoder,
     private val jwtService: JwtService,
     private val refreshTokenRepository: RefreshTokenRepository,
-    private val emailVerificationService: EmailVerificationService
+    private val emailVerificationService: EmailVerificationService,
+    private val eventPublisher: EventPublisher
 ) {
 
     @Transactional
@@ -48,6 +54,14 @@ class AuthService(
 
         val emailVerificationToken = emailVerificationService.createVerificationToken(email = trimmedEmail)
 
+        val eventUserCreated = UserEvent.Created(
+            userId = savedUser.id,
+            email = savedUser.email,
+            username = savedUser.username,
+            verificationToken = emailVerificationToken.token
+        )
+        eventPublisher.publish(event = eventUserCreated)
+
         return savedUser
     }
 
@@ -58,7 +72,7 @@ class AuthService(
         if (!passwordEncoder.matches(password, user.password))
             throw InvalidCredentialsException()
 
-        if(!user.hasVerifiedEmail) throw EmailNotVerifiedException()
+        if (!user.hasVerifiedEmail) throw EmailNotVerifiedException()
 
         val tokens = user.id?.let { userId ->
             val accessToken = jwtService.generateAccessToken(userId = userId)

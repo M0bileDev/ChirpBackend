@@ -1,5 +1,6 @@
 package com.mobidev.studio.chirp.service.auth
 
+import com.mobidev.studio.chirp.domain.events.user.UserEvent
 import com.mobidev.studio.chirp.domain.exception.InvalidTokenException
 import com.mobidev.studio.chirp.domain.exception.UserNotFoundException
 import com.mobidev.studio.chirp.domain.model.EmailVerificationToken
@@ -7,6 +8,7 @@ import com.mobidev.studio.chirp.infra.database.entities.EmailVerificationTokenEn
 import com.mobidev.studio.chirp.infra.database.repositories.EmailVerificationTokenRepository
 import com.mobidev.studio.chirp.infra.database.repositories.UserRepository
 import com.mobidev.studio.chirp.infra.mappers.toEmailVerificationToken
+import com.mobidev.studio.chirp.infra.message_queue.EventPublisher
 import jakarta.transaction.Transactional
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.scheduling.annotation.Scheduled
@@ -18,7 +20,8 @@ import java.time.temporal.ChronoUnit
 class EmailVerificationService(
     private val emailVerificationTokenRepository: EmailVerificationTokenRepository,
     private val userRepository: UserRepository,
-    @param:Value("\${chirp.email.verification.expiry-hours}") private val emailExpiryHours: Long
+    @param:Value("\${chirp.email.verification.expiry-hours}") private val emailExpiryHours: Long,
+    private val eventPublisher: EventPublisher
 ) {
 
     @Transactional
@@ -58,13 +61,26 @@ class EmailVerificationService(
     }
 
     @Scheduled(cron = "0 0 3 * * *")
-    fun cleanupExpiredTokensTask(){
+    fun cleanupExpiredTokensTask() {
         val now = Instant.now()
 
         emailVerificationTokenRepository.deleteByExpiresAtLessThan(now)
     }
 
-    fun resendEmailVerificationEmail(email: String){
-        //todo: trigger resend
+    @Transactional
+    fun resendVerificationEmail(email: String) {
+        val verificationToken = createVerificationToken(email = email)
+
+        if (verificationToken.user.hasEmailVerified) return
+
+        val eventRequestResendVerification = with(verificationToken.user) {
+            UserEvent.RequestResendVerification(
+                userId = id,
+                email = this.email,
+                username = username,
+                verificationToken = verificationToken.token
+            )
+        }
+        eventPublisher.publish(event = eventRequestResendVerification)
     }
 }
