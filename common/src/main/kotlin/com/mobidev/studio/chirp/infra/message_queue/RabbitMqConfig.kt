@@ -15,12 +15,14 @@ import org.springframework.amqp.support.converter.JacksonJsonMessageConverter
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.transaction.PlatformTransactionManager
+import org.springframework.transaction.annotation.EnableTransactionManagement
 import tools.jackson.databind.DefaultTyping
 import tools.jackson.databind.json.JsonMapper
 import tools.jackson.databind.jsontype.BasicPolymorphicTypeValidator
 import tools.jackson.module.kotlin.kotlinModule
 
 @Configuration
+@EnableTransactionManagement
 class RabbitMqConfig {
 
     @Bean
