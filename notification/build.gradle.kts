@@ -16,6 +16,9 @@ repositories {
 dependencies {
     implementation(projects.common)
     testImplementation(kotlin("test"))
+
+    //RabbitMQ dependencies
+    implementation(libs.spring.boot.starter.amqp)
 }
 
 tasks.test {
