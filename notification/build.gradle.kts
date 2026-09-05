@@ -19,6 +19,9 @@ dependencies {
 
     //RabbitMQ dependencies
     implementation(libs.spring.boot.starter.amqp)
+
+    //Thymeleaf html template engine dependencies
+    implementation(libs.spring.boot.starter.thymeleaf)
 }
 
 tasks.test {
