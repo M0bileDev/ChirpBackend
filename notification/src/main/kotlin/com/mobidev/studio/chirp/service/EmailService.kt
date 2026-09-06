@@ -20,7 +20,7 @@ class EmailService(
     private val logger = LoggerFactory.getLogger(javaClass)
 
     fun sendVerificationEmail(
-        email: String,
+        emailTo: String,
         username: String,
         userId: UserId,
         token: String
@@ -40,6 +40,12 @@ class EmailService(
                 "username" to username,
                 "verificationUrl" to verificationUrl,
             )
+        )
+
+        sendHtmlEmail(
+            to = emailTo,
+            subject = "Please verify your chirp account",
+            html = htmlContent
         )
     }
 
