@@ -54,6 +54,19 @@ spring:
         format_sql: true
         show_sql: true
 
+# configured through SMTP credentials
+  mail:
+    port: 587
+    password: ${MAILGUN_PASSWORD}
+    properties:
+      mail:
+        smtp:
+#          automatically authenticate with credentials
+          auth: true
+#          Transport Layer Security (cryptographic protocol)
+          starttls:
+            enable: true
+
   rabbitmq:
     host: swallow.lmq.cloudamqp.com
     password: ${RABBITMQ_PASSWORD}
@@ -63,17 +76,17 @@ spring:
     virtual-host: vrptxmcv
     listener:
       simple:
-#        how event listeners handle events (automatically acknowledge or manually created rules)
+        #        how event listeners handle events (automatically acknowledge or manually created rules)
         acknowledge-mode: auto
-#        invoker threads
+        #        invoker threads
         concurrency: 1
         max-concurrency: 3
-#        maximum number of unprocessed messages at a given time
+        #        maximum number of unprocessed messages at a given time
         prefetch: 10
         default-requeue-rejected: true
         retry:
           enabled: true
-#          how much time to wait between retries
+          #          how much time to wait between retries
           initial-interval: 1000ms
           max-interval: 10000ms
           max-attempts: 3
