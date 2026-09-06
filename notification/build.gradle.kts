@@ -22,6 +22,9 @@ dependencies {
 
     //Thymeleaf html template engine dependencies
     implementation(libs.spring.boot.starter.thymeleaf)
+
+    //JavaMailSender dependencies
+    implementation(libs.spring.boot.starter.mail)
 }
 
 tasks.test {
