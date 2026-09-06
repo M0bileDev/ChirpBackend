@@ -97,6 +97,7 @@ jwt:
 
 chirp:
   email:
+    from: mobidev@studio.com
     verification:
       expiry-hours: 24
     reset-password:
