@@ -19,4 +19,7 @@ dependencies {
 
     // message queen dependency
     implementation(libs.spring.boot.starter.amqp)
+
+    // mailgun dependencies
+    implementation(libs.spring.boot.starter.mail)
 }
