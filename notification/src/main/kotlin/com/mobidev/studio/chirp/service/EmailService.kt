@@ -3,7 +3,9 @@ package com.mobidev.studio.chirp.service
 import com.mobidev.studio.chirp.domain.type.UserId
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.mail.MailException
 import org.springframework.mail.javamail.JavaMailSender
+import org.springframework.mail.javamail.MimeMessageHelper
 import org.springframework.stereotype.Service
 import org.springframework.web.util.UriComponentsBuilder
 
@@ -39,7 +41,25 @@ class EmailService(
                 "verificationUrl" to verificationUrl,
             )
         )
+    }
 
+    private fun sendHtmlEmail(
+        to: String,
+        subject: String,
+        html: String
+    ) {
+        val message = javaMailSender.createMimeMessage()
+        MimeMessageHelper(message, true, "UTF-8").apply {
+            setFrom(emailFrom)
+            setTo(to)
+            setSubject(subject)
+            setText(html, true)
+        }
 
+        try {
+            javaMailSender.send(message)
+        } catch (e: MailException) {
+            logger.error("Error while sending email", e)
+        }
     }
 }
