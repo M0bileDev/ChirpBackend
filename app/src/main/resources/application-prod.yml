@@ -4,6 +4,9 @@ spring:
     hibernate:
 #      validate the schema, make no changes to the database
       ddl-auto: validate
+  mail:
+    host: smtp.mailgun.org
+    username: mobidevstudio@sandbox2776b09861d340a684b4340ac620ceb3.mailgun.org
 
 jwt:
   expiration-minutes: 15
