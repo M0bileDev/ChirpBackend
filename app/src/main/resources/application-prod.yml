@@ -16,6 +16,8 @@ nginx:
   require-proxy: true
 
 chirp:
+  email:
+    url: "https://chirp.mobidev.studio.com"
   rate-limit:
     ip:
       apply-limit: true
