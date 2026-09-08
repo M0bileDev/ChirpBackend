@@ -8,6 +8,7 @@ import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.mail.javamail.MimeMessageHelper
 import org.springframework.stereotype.Service
 import org.springframework.web.util.UriComponentsBuilder
+import java.time.Duration
 
 @Service
 class EmailService(
@@ -45,6 +46,38 @@ class EmailService(
         sendHtmlEmail(
             to = emailTo,
             subject = "Please verify your chirp account",
+            html = htmlContent
+        )
+    }
+
+    fun sendPasswordResetEmail(
+        emailTo: String,
+        username: String,
+        userId: UserId,
+        token: String,
+        expiresIn: Duration
+    ) {
+        logger.info("Sending password reset email for user id: $userId...")
+
+        val resetPasswordUrl = UriComponentsBuilder
+            .fromUriString("$baseUrl/api/v1/auth/reset-password")
+            .queryParam("token", token)
+            .build()
+            .toUriString()
+
+        val htmlContent = templateService.processTemplate(
+//            template name has to be identical as placed in the resources
+            templateName = "emails/reset-password",
+            variables = mapOf(
+                "username" to username,
+                "resetPasswordUrl" to resetPasswordUrl,
+                "expiresInMinutes" to expiresIn.toMinutes()
+            )
+        )
+
+        sendHtmlEmail(
+            to = emailTo,
+            subject = "Reset your chirp password",
             html = htmlContent
         )
     }

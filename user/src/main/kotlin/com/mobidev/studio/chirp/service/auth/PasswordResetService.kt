@@ -1,5 +1,6 @@
 package com.mobidev.studio.chirp.service.auth
 
+import com.mobidev.studio.chirp.domain.events.user.UserEvent
 import com.mobidev.studio.chirp.domain.exception.InvalidCredentialsException
 import com.mobidev.studio.chirp.domain.exception.InvalidTokenException
 import com.mobidev.studio.chirp.domain.exception.SamePasswordException
@@ -9,6 +10,7 @@ import com.mobidev.studio.chirp.infra.database.entities.PasswordResetTokenEntity
 import com.mobidev.studio.chirp.infra.database.repositories.PasswordResetTokenRepository
 import com.mobidev.studio.chirp.infra.database.repositories.RefreshTokenRepository
 import com.mobidev.studio.chirp.infra.database.repositories.UserRepository
+import com.mobidev.studio.chirp.infra.message_queue.EventPublisher
 import com.mobidev.studio.chirp.infra.security.PasswordEncoder
 import jakarta.transaction.Transactional
 import org.springframework.beans.factory.annotation.Value
@@ -25,6 +27,7 @@ class PasswordResetService(
     private val passwordEncoder: PasswordEncoder,
     private val refreshTokenRepository: RefreshTokenRepository,
     @param:Value("\${chirp.email.reset-password.expiry-minutes}") private val passwordExpiryMinutes: Long,
+    private val eventPublisher: EventPublisher
 ) {
 
     @Transactional
@@ -39,7 +42,15 @@ class PasswordResetService(
         )
         passwordResetTokenRepository.save(passwordResetToken)
 
-        // TODO: trigger notification service to send reset password email
+        eventPublisher.publish(
+            event = UserEvent.RequestResetPassword(
+                userId = user.id!!,
+                email = user.email,
+                username = user.username,
+                passwordResetToken = passwordResetToken.token,
+                expiresInMinutes = passwordExpiryMinutes
+            )
+        )
     }
 
     @Transactional
@@ -95,7 +106,7 @@ class PasswordResetService(
     }
 
     @Scheduled(cron = "0 0 3 * * *")
-    fun cleanupExpiredTokensTask(){
+    fun cleanupExpiredTokensTask() {
         val now = Instant.now()
 
         passwordResetTokenRepository.deleteByExpiresAtLessThan(now)
