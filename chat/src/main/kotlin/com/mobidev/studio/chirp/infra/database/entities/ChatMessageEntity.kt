@@ -41,7 +41,7 @@ class ChatMessageEntity(
 //    default value has to be provided for Hibernate to autopopulate this value,
 //    because if not, then the moment ChatMessageEntity will be requested,
 //    expects chat to be passed
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(
         name = "sender_id",
         nullable = false,
