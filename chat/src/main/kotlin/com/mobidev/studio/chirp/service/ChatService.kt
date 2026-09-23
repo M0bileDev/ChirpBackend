@@ -19,10 +19,10 @@ class ChatService(
 
     fun createChat(
         creatorId: UserId,
-        otherUserId: Set<UserId>
+        otherUserIds: Set<UserId>
     ): Chat {
         val otherParticipants = chatParticipantRepository.findByUserIdIn(
-            userIds = otherUserId
+            userIds = otherUserIds
         )
 
         val allParticipants = otherParticipants.plus(creatorId)
