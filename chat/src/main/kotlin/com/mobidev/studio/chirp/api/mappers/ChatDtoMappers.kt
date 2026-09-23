@@ -1,7 +1,19 @@
 package com.mobidev.studio.chirp.api.mappers
 
+import com.mobidev.studio.chirp.api.dto.ChatMessageDto
 import com.mobidev.studio.chirp.api.dto.ChatParticipantDto
+import com.mobidev.studio.chirp.domain.model.ChatMessage
 import com.mobidev.studio.chirp.domain.model.ChatParticipant
+
+fun ChatMessage.toChatMessageDto(): ChatMessageDto {
+    return ChatMessageDto(
+        id = id,
+        chatId = chatId,
+        content = content,
+        createdAt = createdAt,
+        senderId = sender.userId
+    )
+}
 
 fun ChatParticipant.toChatParticipantDto(): ChatParticipantDto {
     return ChatParticipantDto(
