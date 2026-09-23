@@ -20,8 +20,13 @@ dependencies {
     testImplementation(kotlin("test"))
 
     implementation(libs.spring.boot.starter.data.jpa)
+
     // enable connection to postgresql instance
     runtimeOnly(libs.postgresql)
+
+    //validation
+    implementation(libs.spring.boot.starter.validation)
+
 }
 
 tasks.test {
