@@ -1,4 +1,4 @@
-package com.mobidev.studio.chirp.infra.service
+package com.mobidev.studio.chirp.service
 
 import com.mobidev.studio.chirp.domain.exception.ChatParticipantNotFoundException
 import com.mobidev.studio.chirp.domain.exception.InvalidChatSizeException
