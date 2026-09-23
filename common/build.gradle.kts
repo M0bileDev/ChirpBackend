@@ -19,6 +19,9 @@ dependencies {
 
     //RabbitMQ dependencies
     implementation(libs.spring.boot.starter.amqp)
+
+    // provides for SecurityContextHolder
+    implementation(libs.spring.boot.starter.security)
 }
 
 tasks.test {
