@@ -23,7 +23,9 @@ class ChatMessageEntity(
     var id: ChatMessageId? = null,
     @Column(nullable = false)
     var content: String,
-    @JoinColumn(
+//    @Column, not @JoinColumn - chatId is a basic value, and @JoinColumn is ignored on basic fields,
+//    which made Hibernate derive a second logical name ("chatId") for the same physical "chat_id" column
+    @Column(
         name = "chat_id",
         nullable = false,
         updatable = false
