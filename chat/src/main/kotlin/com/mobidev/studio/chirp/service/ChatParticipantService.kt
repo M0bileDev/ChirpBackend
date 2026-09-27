@@ -22,4 +22,14 @@ class ChatParticipantService(
     fun findChatParticipantById(userId: UserId): ChatParticipant? {
         return chatParticipantRepository.findByIdOrNull(userId)?.toChatParticipant()
     }
+
+    fun findChatParticipantByEmailOrUsername(
+        query: String
+    ): ChatParticipant? {
+        val normalizedQuery = query.lowercase().trim()
+
+        return chatParticipantRepository.findByEmailsOrUsername(
+            query = normalizedQuery
+        )?.toChatParticipant()
+    }
 }
