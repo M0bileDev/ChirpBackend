@@ -23,6 +23,7 @@ class ChatEntity(
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
         name = "chat_participants_cross_ref",
+        schema = "chat_service",
         joinColumns = [JoinColumn(name = "chat_id")],
         inverseJoinColumns = [JoinColumn(name = "user_id")],
         indexes = [

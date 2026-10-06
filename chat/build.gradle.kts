@@ -21,12 +21,14 @@ dependencies {
 
     implementation(libs.spring.boot.starter.data.jpa)
 
-    // enable connection to postgresql instance
+    //Enable connection to postgresql instance
     runtimeOnly(libs.postgresql)
 
-    //validation
+    //Validation
     implementation(libs.spring.boot.starter.validation)
 
+    //RabbitMQ dependencies
+    implementation(libs.spring.boot.starter.amqp)
 }
 
 tasks.test {
