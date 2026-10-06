@@ -1,6 +1,7 @@
 package com.mobidev.studio.chirp.infra.message_queue
 
 import com.mobidev.studio.chirp.domain.events.ChirpEvent
+import com.mobidev.studio.chirp.domain.events.chat.ChatEventConstants
 import com.mobidev.studio.chirp.domain.events.user.UserEventConstants
 import org.springframework.amqp.core.Binding
 import org.springframework.amqp.core.BindingBuilder
@@ -80,10 +81,24 @@ class RabbitMqConfig {
         false
     )
 
+    @Bean
+    fun chatExchange() = TopicExchange(
+        ChatEventConstants.CHAT_EXCHANGE,
+        true,
+        false
+    )
+
     // queue that notification service can listen to
     @Bean
     fun notificationUserEventsQueue() = Queue(
         MessageQueues.NOTIFICATION_USER_EVENTS,
+        true
+    )
+
+    // queue that chat service can listen to
+    @Bean
+    fun chatUserEventsQueue() = Queue(
+        MessageQueues.CHAT_USER_EVENTS,
         true
     )
 
@@ -95,6 +110,19 @@ class RabbitMqConfig {
         return BindingBuilder
             .bind(notificationUserEventsQueue)
             .to(userExchange)
+            // receive all events
+            .with("user.*")
+    }
+
+    @Bean
+    fun chatUserEventsBinding(
+        chatUserEventsQueue: Queue,
+        chatExchange: TopicExchange
+    ): Binding {
+        return BindingBuilder
+            .bind(chatUserEventsQueue)
+            .to(chatExchange)
+            // receive all events -> could be narrow into specific events like user.verified
             .with("user.*")
     }
 
