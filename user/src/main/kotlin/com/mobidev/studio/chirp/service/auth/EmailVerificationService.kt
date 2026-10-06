@@ -58,6 +58,19 @@ class EmailVerificationService(
 
         val updatedUser = emailVerificationToken.user.apply { hasVerifiedEmail = true }
         userRepository.save(updatedUser)
+
+        val userId = updatedUser.id!!
+        val email = updatedUser.email
+        val username = updatedUser.username
+
+        // publish that user has verified email (add chat participant in chat service into database table)
+        eventPublisher.publish(
+            UserEvent.Verified(
+                userId = userId,
+                email = email,
+                username = username
+            )
+        )
     }
 
     @Scheduled(cron = "0 0 3 * * *")
