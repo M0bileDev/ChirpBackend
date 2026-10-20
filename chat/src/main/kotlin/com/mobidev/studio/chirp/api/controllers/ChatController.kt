@@ -37,4 +37,14 @@ class ChatController(
             userIds = body.userIds.toSet()
         ).toChatDto()
     }
+
+    @DeleteMapping("/{chatId}/leave")
+    fun leaveChat(
+        @PathVariable chatId: ChatId,
+    ) {
+        chatService.removeParticipantFromChat(
+            chatId = chatId,
+            userId = requestUserId
+        )
+    }
 }
