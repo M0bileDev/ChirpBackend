@@ -47,29 +47,37 @@ class ChatService(
         return chatRepository.save(entity).toChat()
     }
 
-//    @Transactional
-//    fun addParticipantsToChat(
-//        requestUserId: UserId,
-//        chatId: ChatId,
-//        userIds: Set<UserId>
-//    ): Chat {
-//        val chat = chatRepository.findByIdOrNull(chatId) ?: throw ChatNotFoundException()
-//
-//        //user that wants to add other users must be present in this chat (as a host)
-//        val isRequestingUserInChat = chat.participants.any {
-//            it.userId == requestUserId
-//        }
-//        if (!isRequestingUserInChat) throw ForbiddenException()
-//
-//        //check if all userIds are valid
-//        val users = userIds.map { userId ->
-//            chatParticipantRepository.findByIdOrNull(userId)
-//                ?: throw ChatParticipantNotFoundException(userId)
-//        }
-//
-//        //upsert chat
-//        //todo add implementation of upserted chat
-//    }
+    @Transactional
+    fun addParticipantsToChat(
+        requestUserId: UserId,
+        chatId: ChatId,
+        userIds: Set<UserId>
+    ): Chat {
+        val chat = chatRepository.findByIdOrNull(chatId) ?: throw ChatNotFoundException()
+
+        //user that wants to add other users must be present in this chat (as a host)
+        val isRequestingUserInChat = chat.participants.any {
+            it.userId == requestUserId
+        }
+        if (!isRequestingUserInChat) throw ForbiddenException()
+
+        //check if all userIds are valid
+        val users = userIds.map { userId ->
+            chatParticipantRepository.findByIdOrNull(userId)
+                ?: throw ChatParticipantNotFoundException(userId)
+        }
+
+        val lastMessage = lastMessageFromChat(chatId)
+        //upsert chat
+        val updatedChat = chat.apply {
+            this.participants = chat.participants.plus(users)
+        }
+
+        return chatRepository
+            .save(
+                updatedChat
+            ).toChat(lastMessage)
+    }
 
     private fun lastMessageFromChat(chatId: ChatId): ChatMessage? {
         val selectedChatId = setOf(chatId)
