@@ -51,7 +51,7 @@ class ChatMessageEntity(
         updatable = false
     )
 //    nullable for the same reason as above
-    var sender: ChatParticipantEntity? = null,
+    var sender: ChatParticipantEntity,
     @CreationTimestamp
     var createdAt: Instant = Instant.now(),
 )
