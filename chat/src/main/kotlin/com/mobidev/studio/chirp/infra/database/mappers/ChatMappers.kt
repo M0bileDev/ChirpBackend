@@ -4,6 +4,7 @@ import com.mobidev.studio.chirp.domain.model.Chat
 import com.mobidev.studio.chirp.domain.model.ChatMessage
 import com.mobidev.studio.chirp.domain.model.ChatParticipant
 import com.mobidev.studio.chirp.infra.database.entities.ChatEntity
+import com.mobidev.studio.chirp.infra.database.entities.ChatMessageEntity
 import com.mobidev.studio.chirp.infra.database.entities.ChatParticipantEntity
 
 fun ChatEntity.toChat(lastMessage: ChatMessage? = null): Chat {
@@ -32,5 +33,15 @@ fun ChatParticipant.toChatParticipantEntity(): ChatParticipantEntity {
         username = username,
         email = email,
         profilePicture = profilePicture
+    )
+}
+
+fun ChatMessageEntity.toChatMessage(): ChatMessage {
+    return ChatMessage(
+        id = id!!,
+        chatId = chatId,
+        sender = sender.toChatParticipant(),
+        content = content,
+        createdAt = createdAt,
     )
 }

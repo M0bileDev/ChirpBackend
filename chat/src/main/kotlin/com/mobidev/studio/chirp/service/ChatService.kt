@@ -1,20 +1,28 @@
 package com.mobidev.studio.chirp.service
 
+import com.mobidev.studio.chirp.domain.exception.ChatNotFoundException
 import com.mobidev.studio.chirp.domain.exception.ChatParticipantNotFoundException
+import com.mobidev.studio.chirp.domain.exception.ForbiddenException
 import com.mobidev.studio.chirp.domain.exception.InvalidChatSizeException
 import com.mobidev.studio.chirp.domain.model.Chat
+import com.mobidev.studio.chirp.domain.model.ChatMessage
+import com.mobidev.studio.chirp.domain.type.ChatId
 import com.mobidev.studio.chirp.domain.type.UserId
 import com.mobidev.studio.chirp.infra.database.entities.ChatEntity
 import com.mobidev.studio.chirp.infra.database.mappers.toChat
+import com.mobidev.studio.chirp.infra.database.mappers.toChatMessage
+import com.mobidev.studio.chirp.infra.database.repositories.ChatMessageRepository
 import com.mobidev.studio.chirp.infra.database.repositories.ChatParticipantRepository
 import com.mobidev.studio.chirp.infra.database.repositories.ChatRepository
+import jakarta.transaction.Transactional
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
 
 @Service
 class ChatService(
     private val chatRepository: ChatRepository,
-    private val chatParticipantRepository: ChatParticipantRepository
+    private val chatParticipantRepository: ChatParticipantRepository,
+    private val chatMessageRepository: ChatMessageRepository,
 ) {
 
     fun createChat(
@@ -37,5 +45,72 @@ class ChatService(
             participants = otherParticipants.plus(creatorParticipant),
         )
         return chatRepository.save(entity).toChat()
+    }
+
+    @Transactional
+    fun addParticipantsToChat(
+        requestUserId: UserId,
+        chatId: ChatId,
+        userIds: Set<UserId>
+    ): Chat {
+        // validate if chat exists
+        val chat = chatRepository.findByIdOrNull(chatId) ?: throw ChatNotFoundException()
+
+        //user that wants to add other users must be present in this chat (as a host)
+        val isRequestingUserInChat = chat.participants.any {
+            it.userId == requestUserId
+        }
+        if (!isRequestingUserInChat) throw ForbiddenException()
+
+        //check if all userIds are valid
+        val users = userIds.map { userId ->
+            chatParticipantRepository.findByIdOrNull(userId)
+                ?: throw ChatParticipantNotFoundException(userId)
+        }
+
+        val lastMessage = lastMessageFromChat(chatId)
+        //upsert chat
+        val updatedChat = chat.apply {
+            this.participants = chat.participants.plus(users)
+        }
+
+        return chatRepository
+            .save(
+                updatedChat
+            ).toChat(lastMessage)
+    }
+
+    @Transactional
+    fun removeParticipantFromChat(
+        chatId: ChatId,
+        userId: UserId
+    ) {
+        // validate if chat exists
+        val chat = chatRepository.findByIdOrNull(chatId) ?: throw ChatNotFoundException()
+
+        //validate if participant exists in this chat
+        val participant =
+            chat.participants.find { it.userId == userId } ?: throw ChatParticipantNotFoundException(userId)
+
+        //check if the last participant leaves the chat -> remove chat from db
+        val newParticipantsSize = chat.participants.size - 1
+        if (newParticipantsSize == 0) {
+            chatRepository.deleteById(chatId)
+            return
+        }
+
+        val updatedChat = chat.apply {
+            this.participants = chat.participants.minus(participant)
+        }
+        chatRepository.save(updatedChat)
+    }
+
+    private fun lastMessageFromChat(chatId: ChatId): ChatMessage? {
+        val selectedChatId = setOf(chatId)
+
+        return chatMessageRepository
+            .findLatestMessagesByChatIds(selectedChatId)
+            .firstOrNull()
+            ?.toChatMessage()
     }
 }
