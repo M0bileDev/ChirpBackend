@@ -4,6 +4,8 @@ import com.mobidev.studio.chirp.domain.type.ChatId
 import com.mobidev.studio.chirp.domain.type.ChatMessageId
 import jakarta.persistence.*
 import org.hibernate.annotations.CreationTimestamp
+import org.hibernate.annotations.OnDelete
+import org.hibernate.annotations.OnDeleteAction
 import java.time.Instant
 
 @Entity
@@ -38,6 +40,7 @@ class ChatMessageEntity(
         insertable = false,
         updatable = false
     )
+    @OnDelete(action = OnDeleteAction.CASCADE)
     var chat: ChatEntity? = null,
 //    Java-Kotlin interop -> event if set as not-nullable,
 //    default value has to be provided for Hibernate to autopopulate this value,
