@@ -4,6 +4,8 @@ import com.mobidev.studio.chirp.api.dto.ChatMessageDto
 import com.mobidev.studio.chirp.api.mappers.toChatMessageDto
 import com.mobidev.studio.chirp.domain.exception.ChatNotFoundException
 import com.mobidev.studio.chirp.domain.exception.ChatParticipantNotFoundException
+import com.mobidev.studio.chirp.domain.exception.ForbiddenException
+import com.mobidev.studio.chirp.domain.exception.MessageNotFoundException
 import com.mobidev.studio.chirp.domain.model.ChatMessage
 import com.mobidev.studio.chirp.domain.type.ChatId
 import com.mobidev.studio.chirp.domain.type.UserId
@@ -72,5 +74,18 @@ class ChatMessageService(
         )
 
         return savedMessage.toChatMessage()
+    }
+
+    @Transactional
+    fun deleteMessage(
+        messageId: ChatId,
+        requestUserId: UserId
+    ) {
+        val message = chatMessageRepository.findByIdOrNull(messageId)
+            ?: throw MessageNotFoundException()
+
+        if (message.sender.userId != requestUserId) throw ForbiddenException()
+
+        chatMessageRepository.delete(message)
     }
 }
