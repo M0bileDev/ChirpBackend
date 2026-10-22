@@ -1,5 +1,7 @@
 package com.mobidev.studio.chirp.service
 
+import com.mobidev.studio.chirp.api.dto.ChatMessageDto
+import com.mobidev.studio.chirp.api.mappers.toChatMessageDto
 import com.mobidev.studio.chirp.domain.exception.ChatNotFoundException
 import com.mobidev.studio.chirp.domain.exception.ChatParticipantNotFoundException
 import com.mobidev.studio.chirp.domain.exception.ForbiddenException
@@ -15,8 +17,10 @@ import com.mobidev.studio.chirp.infra.database.repositories.ChatMessageRepositor
 import com.mobidev.studio.chirp.infra.database.repositories.ChatParticipantRepository
 import com.mobidev.studio.chirp.infra.database.repositories.ChatRepository
 import jakarta.transaction.Transactional
+import org.springframework.data.domain.PageRequest
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
+import java.time.Instant
 
 @Service
 class ChatService(
@@ -112,5 +116,26 @@ class ChatService(
             .findLatestMessagesByChatIds(selectedChatId)
             .firstOrNull()
             ?.toChatMessage()
+    }
+
+    // violation of "separation of concerns" because return type is dto, because domain model
+    // contains "sender" which is not needed for all the users
+    fun getChatMessages(
+        chatId: ChatId,
+        before: Instant?,
+        pageSize: Int
+    ): List<ChatMessageDto> {
+        return chatMessageRepository
+            .findByChatIdBefore(
+                chatId = chatId,
+                before = before ?: Instant.now(),
+                pageable = PageRequest.of(0, pageSize)
+            )
+            .content
+            // result has to be reversed, sorted by createdAt field in SQL query
+            .asReversed()
+            .map {
+                it.toChatMessage().toChatMessageDto()
+            }
     }
 }
