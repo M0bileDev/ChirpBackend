@@ -27,27 +27,6 @@ class ChatMessageService(
     private val chatParticipantRepository: ChatParticipantRepository
 ) {
 
-    // violation of "separation of concerns" because return type is dto, because domain model
-    // contains "sender" which is not needed for all the users
-    fun getChatMessages(
-        chatId: ChatId,
-        before: Instant?,
-        pageSize: Int
-    ): List<ChatMessageDto> {
-        return chatMessageRepository
-            .findByChatIdBefore(
-                chatId = chatId,
-                before = before ?: Instant.now(),
-                pageable = PageRequest.of(0, pageSize)
-            )
-            .content
-            // result has to be reversed, sorted by createdAt field in SQL query
-            .asReversed()
-            .map {
-                it.toChatMessage().toChatMessageDto()
-            }
-    }
-
     @Transactional
     fun sendMessage(
         chatId: ChatId,

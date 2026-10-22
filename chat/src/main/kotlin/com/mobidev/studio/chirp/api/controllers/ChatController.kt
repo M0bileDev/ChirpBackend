@@ -2,6 +2,7 @@ package com.mobidev.studio.chirp.api.controllers
 
 import com.mobidev.studio.chirp.api.dto.AddParticipantToChatDto
 import com.mobidev.studio.chirp.api.dto.ChatDto
+import com.mobidev.studio.chirp.api.dto.ChatMessageDto
 import com.mobidev.studio.chirp.api.mappers.toChatDto
 import com.mobidev.studio.chirp.api.request.CreateChatRequest
 import com.mobidev.studio.chirp.api.util.requestUserId
@@ -9,6 +10,7 @@ import com.mobidev.studio.chirp.domain.type.ChatId
 import com.mobidev.studio.chirp.service.ChatService
 import jakarta.validation.Valid
 import org.springframework.web.bind.annotation.*
+import java.time.Instant
 
 @RestController
 @RequestMapping("/api/v1/chat")
@@ -26,7 +28,7 @@ class ChatController(
         ).toChatDto()
     }
 
-    @PostMapping("/{chatId}/add")
+    @PostMapping("/{$CHAT_ID}/add")
     fun addChatParticipants(
         @PathVariable chatId: ChatId,
         @Valid @RequestBody body: AddParticipantToChatDto
@@ -38,7 +40,7 @@ class ChatController(
         ).toChatDto()
     }
 
-    @DeleteMapping("/{chatId}/leave")
+    @DeleteMapping("/{$CHAT_ID}/leave")
     fun leaveChat(
         @PathVariable chatId: ChatId,
     ) {
@@ -46,5 +48,23 @@ class ChatController(
             chatId = chatId,
             userId = requestUserId
         )
+    }
+
+    @GetMapping("/{$CHAT_ID}/messages")
+    fun getMessagesFromChat(
+        @PathVariable(CHAT_ID) chatId: ChatId,
+        @RequestParam("before", required = false) before: Instant? = null,
+        @RequestParam("pageSize", required = false) pageSize: Int = DEFAULT_PAGE_SIZE,
+    ): List<ChatMessageDto> {
+        return chatService.getChatMessages(
+            chatId = chatId,
+            before = before,
+            pageSize = pageSize
+        )
+    }
+
+    companion object {
+        private const val CHAT_ID = "chatId"
+        private const val DEFAULT_PAGE_SIZE = 20
     }
 }
