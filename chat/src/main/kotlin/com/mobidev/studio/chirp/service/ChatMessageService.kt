@@ -1,7 +1,6 @@
 package com.mobidev.studio.chirp.service
 
-import com.mobidev.studio.chirp.api.dto.ChatMessageDto
-import com.mobidev.studio.chirp.api.mappers.toChatMessageDto
+import com.mobidev.studio.chirp.domain.event.MessageDeletedEvent
 import com.mobidev.studio.chirp.domain.exception.ChatNotFoundException
 import com.mobidev.studio.chirp.domain.exception.ChatParticipantNotFoundException
 import com.mobidev.studio.chirp.domain.exception.ForbiddenException
@@ -15,16 +14,16 @@ import com.mobidev.studio.chirp.infra.database.repositories.ChatMessageRepositor
 import com.mobidev.studio.chirp.infra.database.repositories.ChatParticipantRepository
 import com.mobidev.studio.chirp.infra.database.repositories.ChatRepository
 import jakarta.transaction.Transactional
-import org.springframework.data.domain.PageRequest
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
-import java.time.Instant
 
 @Service
 class ChatMessageService(
     private val chatRepository: ChatRepository,
     private val chatMessageRepository: ChatMessageRepository,
-    private val chatParticipantRepository: ChatParticipantRepository
+    private val chatParticipantRepository: ChatParticipantRepository,
+    private val applicationEventPublisher: ApplicationEventPublisher,
 ) {
 
     @Transactional
@@ -66,5 +65,14 @@ class ChatMessageService(
         if (message.sender.userId != requestUserId) throw ForbiddenException()
 
         chatMessageRepository.delete(message)
+
+        val messageDeletedEvent = MessageDeletedEvent(
+            messageId = messageId,
+            chatId = message.chatId
+        )
+        // broadcast event within one module -> :chat
+        applicationEventPublisher.publishEvent(
+            messageDeletedEvent
+        )
     }
 }
