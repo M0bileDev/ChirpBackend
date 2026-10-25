@@ -2,6 +2,8 @@ package com.mobidev.studio.chirp.service
 
 import com.mobidev.studio.chirp.api.dto.ChatMessageDto
 import com.mobidev.studio.chirp.api.mappers.toChatMessageDto
+import com.mobidev.studio.chirp.domain.event.ChatParticipantLeftEvent
+import com.mobidev.studio.chirp.domain.event.ChatParticipantsJoinedEvent
 import com.mobidev.studio.chirp.domain.exception.ChatNotFoundException
 import com.mobidev.studio.chirp.domain.exception.ChatParticipantNotFoundException
 import com.mobidev.studio.chirp.domain.exception.ForbiddenException
@@ -17,6 +19,7 @@ import com.mobidev.studio.chirp.infra.database.repositories.ChatMessageRepositor
 import com.mobidev.studio.chirp.infra.database.repositories.ChatParticipantRepository
 import com.mobidev.studio.chirp.infra.database.repositories.ChatRepository
 import jakarta.transaction.Transactional
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
@@ -27,6 +30,7 @@ class ChatService(
     private val chatRepository: ChatRepository,
     private val chatParticipantRepository: ChatParticipantRepository,
     private val chatMessageRepository: ChatMessageRepository,
+    private val applicationEventPublisher: ApplicationEventPublisher,
 ) {
 
     fun createChat(
@@ -78,6 +82,14 @@ class ChatService(
             this.participants = chat.participants.plus(users)
         }
 
+        val chatParticipantsJoinedEvent = ChatParticipantsJoinedEvent(
+            chatId = chatId,
+            userIds = userIds
+        )
+        applicationEventPublisher.publishEvent(
+            chatParticipantsJoinedEvent
+        )
+
         return chatRepository
             .save(
                 updatedChat
@@ -107,6 +119,14 @@ class ChatService(
             this.participants = chat.participants.minus(participant)
         }
         chatRepository.save(updatedChat)
+
+        val chatParticipantLeftEvent = ChatParticipantLeftEvent(
+            chatId = chatId,
+            userId = userId
+        )
+        applicationEventPublisher.publishEvent(
+            chatParticipantLeftEvent
+        )
     }
 
     private fun lastMessageFromChat(chatId: ChatId): ChatMessage? {
