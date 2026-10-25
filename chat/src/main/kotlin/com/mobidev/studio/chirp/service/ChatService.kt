@@ -19,6 +19,7 @@ import com.mobidev.studio.chirp.infra.database.repositories.ChatMessageRepositor
 import com.mobidev.studio.chirp.infra.database.repositories.ChatParticipantRepository
 import com.mobidev.studio.chirp.infra.database.repositories.ChatRepository
 import jakarta.transaction.Transactional
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.repository.findByIdOrNull
@@ -140,6 +141,18 @@ class ChatService(
 
     // violation of "separation of concerns" because return type is dto, because domain model
     // contains "sender" which is not needed for all the users
+    @Cacheable(
+        value = [MESSAGES_CACHE_NAME],
+        key = "#chatId",
+        // by default redis will cache the most recent
+        // list of messages, it could be at first page 1, then page 2
+        // etc. so a client expecting to get page 1 will get page 2;
+        // rule below, first page (before is null) and client
+        // cant manipulate page size, so no more than 50
+        condition = "#before == null && #pageSize <= 50",
+        // two simultaneous requests, will be handled in order
+        sync = true
+    )
     fun getChatMessages(
         chatId: ChatId,
         before: Instant?,
@@ -157,5 +170,9 @@ class ChatService(
             .map {
                 it.toChatMessage().toChatMessageDto()
             }
+    }
+
+    companion object{
+        const val MESSAGES_CACHE_NAME = "messages"
     }
 }
