@@ -16,6 +16,7 @@ import com.mobidev.studio.chirp.infra.database.repositories.ChatParticipantRepos
 import com.mobidev.studio.chirp.infra.database.repositories.ChatRepository
 import com.mobidev.studio.chirp.infra.message_queue.EventPublisher
 import jakarta.transaction.Transactional
+import org.springframework.cache.annotation.CacheEvict
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
@@ -30,6 +31,11 @@ class ChatMessageService(
 ) {
 
     @Transactional
+    // each time new message will be sent for this particular chatId, the cache will be evicted
+    @CacheEvict(
+        value = [MESSAGES_CACHE_NAME],
+        key = "#chatId"
+    )
     fun sendMessage(
         chatId: ChatId,
         senderId: UserId,
@@ -87,5 +93,9 @@ class ChatMessageService(
         applicationEventPublisher.publishEvent(
             messageDeletedEvent
         )
+    }
+
+    companion object {
+        const val MESSAGES_CACHE_NAME = "messages"
     }
 }
