@@ -93,6 +93,16 @@ class ChatMessageService(
         applicationEventPublisher.publishEvent(
             messageDeletedEvent
         )
+
+        evictMessagesCache(message.chatId)
+    }
+
+    @CacheEvict(
+        value = [MESSAGES_CACHE_NAME],
+        key = "#chatId"
+    )
+    fun evictMessagesCache(chatId: ChatId) {
+        // NO-OP: Let spring framework handle the cache evict
     }
 
     companion object {
