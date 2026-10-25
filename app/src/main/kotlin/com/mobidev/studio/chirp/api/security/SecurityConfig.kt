@@ -1,4 +1,4 @@
-package com.mobidev.studio.chirp.security
+package com.mobidev.studio.chirp.api.security
 
 import com.mobidev.studio.chirp.api.config.JwtAuthFilter
 import jakarta.servlet.DispatcherType
