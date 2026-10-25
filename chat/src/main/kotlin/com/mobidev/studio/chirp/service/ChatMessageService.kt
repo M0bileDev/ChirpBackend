@@ -1,6 +1,7 @@
 package com.mobidev.studio.chirp.service
 
 import com.mobidev.studio.chirp.domain.event.MessageDeletedEvent
+import com.mobidev.studio.chirp.domain.events.chat.ChatEvent
 import com.mobidev.studio.chirp.domain.exception.ChatNotFoundException
 import com.mobidev.studio.chirp.domain.exception.ChatParticipantNotFoundException
 import com.mobidev.studio.chirp.domain.exception.ForbiddenException
@@ -13,6 +14,7 @@ import com.mobidev.studio.chirp.infra.database.mappers.toChatMessage
 import com.mobidev.studio.chirp.infra.database.repositories.ChatMessageRepository
 import com.mobidev.studio.chirp.infra.database.repositories.ChatParticipantRepository
 import com.mobidev.studio.chirp.infra.database.repositories.ChatRepository
+import com.mobidev.studio.chirp.infra.message_queue.EventPublisher
 import jakarta.transaction.Transactional
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.repository.findByIdOrNull
@@ -24,6 +26,7 @@ class ChatMessageService(
     private val chatMessageRepository: ChatMessageRepository,
     private val chatParticipantRepository: ChatParticipantRepository,
     private val applicationEventPublisher: ApplicationEventPublisher,
+    private val eventPublisher: EventPublisher
 ) {
 
     @Transactional
@@ -47,9 +50,19 @@ class ChatMessageService(
             chat = chat,
             sender = sender
         )
-        val savedMessage = chatMessageRepository.save(
+        val savedMessage = chatMessageRepository.saveAndFlush(
             newMessage
         )
+
+        val recipientIds = chat.participants.map { it.userId }.toSet()
+        val newMessageChatEvent = ChatEvent.NewMessage(
+            senderId = sender.userId,
+            senderUsername = sender.username,
+            recipientIds = recipientIds,
+            chatId = chatId,
+            message = savedMessage.content
+        )
+        eventPublisher.publish(newMessageChatEvent)
 
         return savedMessage.toChatMessage()
     }
