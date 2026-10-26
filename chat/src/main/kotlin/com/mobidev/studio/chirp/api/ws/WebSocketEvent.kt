@@ -11,3 +11,13 @@ enum class OutgoingWebSocketMessageType {
     CHAT_PARTICIPANTS_CHANGED,
     ERROR
 }
+
+data class IncomingWebSocketMessage(
+    val type: IncomingWebSocketMessageType,
+    val payload: String,
+)
+
+data class OutgoingWebSocketMessage(
+    val type: OutgoingWebSocketMessageType,
+    val payload: String,
+)
