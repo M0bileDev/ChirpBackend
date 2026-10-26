@@ -14,6 +14,7 @@ import com.mobidev.studio.chirp.infra.database.repositories.UserRepository
 import com.mobidev.studio.chirp.infra.mappers.toUser
 import com.mobidev.studio.chirp.infra.message_queue.EventPublisher
 import com.mobidev.studio.chirp.infra.security.PasswordEncoder
+import com.mobidev.studio.chirp.service.JwtService
 import jakarta.transaction.Transactional
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service

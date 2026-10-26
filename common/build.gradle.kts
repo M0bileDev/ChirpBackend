@@ -22,6 +22,12 @@ dependencies {
 
     // provides for SecurityContextHolder
     implementation(libs.spring.boot.starter.security)
+
+    // enables jwt related classes
+    implementation(libs.jwt.api)
+    runtimeOnly(libs.jwt.impl)
+    // enables serialization
+    runtimeOnly(libs.jwt.jackson)
 }
 
 tasks.test {

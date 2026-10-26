@@ -29,6 +29,9 @@ dependencies {
 
     //RabbitMQ dependencies
     implementation(libs.spring.boot.starter.amqp)
+
+    //TextWebSocketHandler
+    implementation(libs.spring.boot.starter.websocket)
 }
 
 tasks.test {
