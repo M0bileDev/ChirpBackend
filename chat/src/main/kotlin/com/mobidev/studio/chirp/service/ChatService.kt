@@ -172,7 +172,21 @@ class ChatService(
             }
     }
 
-    companion object{
+    fun getChatById(
+        chatId: ChatId,
+        requestUserId: UserId
+    ): Chat? {
+        val lastMessageFromChat = lastMessageFromChat(chatId)
+
+        return chatRepository.findChatById(
+            chatId,
+            requestUserId
+        )?.toChat(
+            lastMessageFromChat
+        )
+    }
+
+    companion object {
         const val MESSAGES_CACHE_NAME = "messages"
     }
 }
