@@ -1,6 +1,6 @@
 package com.mobidev.studio.chirp.api.config
 
-import com.mobidev.studio.chirp.service.auth.JwtService
+import com.mobidev.studio.chirp.service.JwtService
 import jakarta.servlet.FilterChain
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
