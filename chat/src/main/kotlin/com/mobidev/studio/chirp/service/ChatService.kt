@@ -186,6 +186,24 @@ class ChatService(
         )
     }
 
+    fun findChatsByUserId(userId: UserId): List<Chat> {
+        val chatEntities = chatRepository.findAllByUserId(userId)
+        val chatIds = chatEntities.mapNotNull { it.chatId }
+        val latestMessages = chatMessageRepository
+            .findLatestMessagesByChatIds(chatIds.toSet())
+            .associateBy { it.chatId }
+
+        return chatEntities
+            .map {
+                it.toChat(
+                    lastMessage = latestMessages[it.chatId]?.toChatMessage()
+                )
+            }
+            .sortedByDescending {
+                it.lastActivityAt
+            }
+    }
+
     companion object {
         const val MESSAGES_CACHE_NAME = "messages"
     }
