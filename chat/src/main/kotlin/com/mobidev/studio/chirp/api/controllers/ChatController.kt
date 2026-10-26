@@ -75,6 +75,15 @@ class ChatController(
         )?.toChatDto() ?: throw ResponseStatusException(HttpStatus.NOT_FOUND)
     }
 
+    @GetMapping
+    fun getChatsForUser(): List<ChatDto> {
+        return chatService.findChatsByUserId(
+            userId = requestUserId
+        ).map {
+            it.toChatDto()
+        }
+    }
+
     companion object {
         private const val CHAT_ID = "chatId"
         private const val DEFAULT_PAGE_SIZE = 20
