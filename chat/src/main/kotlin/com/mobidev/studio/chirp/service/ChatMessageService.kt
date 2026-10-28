@@ -8,6 +8,7 @@ import com.mobidev.studio.chirp.domain.exception.ForbiddenException
 import com.mobidev.studio.chirp.domain.exception.MessageNotFoundException
 import com.mobidev.studio.chirp.domain.model.ChatMessage
 import com.mobidev.studio.chirp.domain.type.ChatId
+import com.mobidev.studio.chirp.domain.type.ChatMessageId
 import com.mobidev.studio.chirp.domain.type.UserId
 import com.mobidev.studio.chirp.infra.database.entities.ChatMessageEntity
 import com.mobidev.studio.chirp.infra.database.mappers.toChatMessage
@@ -43,7 +44,7 @@ class ChatMessageService(
         // sender creates the messageId, the id will be sent over web socket, sender will receive the message back from the server
         // if it was sent successfully (there has to be a mechanism that tells message was send/received successfully or not),
         // messageId will be compared by the client
-        messageId: ChatId
+        messageId: ChatMessageId? = null
     ): ChatMessage {
         val chat = chatRepository.findChatById(chatId, senderId) ?: throw ChatNotFoundException()
         val sender =
