@@ -14,6 +14,7 @@ import org.springframework.web.socket.CloseStatus
 import org.springframework.web.socket.TextMessage
 import org.springframework.web.socket.WebSocketSession
 import org.springframework.web.socket.handler.TextWebSocketHandler
+import tools.jackson.core.JacksonException
 import tools.jackson.databind.ObjectMapper
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.locks.ReentrantReadWriteLock
@@ -164,5 +165,41 @@ class ChatWebSocketHandler(
             chatId = dto.chatId,
             message = message
         )
+    }
+
+    override fun handleTextMessage(
+        session: WebSocketSession,
+        message: TextMessage
+    ) {
+        logger.debug("Received message ${message.payload}")
+
+        val userSession = connectionLock.read {
+            sessions[session.id] ?: return
+        }
+
+        try {
+            val webSocketMessage = objectMapper.readValue(
+                message.payload,
+                IncomingWebSocketMessage::class.java
+            )
+
+            when(webSocketMessage.type){
+                IncomingWebSocketMessageType.NEW_MESSAGE -> {
+                    val sendMessageDto = objectMapper.readValue(
+                        webSocketMessage.payload,
+                        SendMessageDto::class.java
+                    )
+
+                    handleSendMessage(
+                        dto = sendMessageDto,
+                        senderId = userSession.userId,
+                    )
+                }
+            }
+        } catch (
+            ex: JacksonException
+        ) {
+            //todo handle exception
+        }
     }
 }
