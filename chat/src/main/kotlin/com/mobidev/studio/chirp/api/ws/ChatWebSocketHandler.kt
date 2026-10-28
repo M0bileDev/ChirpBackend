@@ -1,5 +1,6 @@
 package com.mobidev.studio.chirp.api.ws
 
+import com.mobidev.studio.chirp.api.dto.ErrorDto
 import com.mobidev.studio.chirp.api.dto.SendMessageDto
 import com.mobidev.studio.chirp.api.mappers.toChatMessageDto
 import com.mobidev.studio.chirp.domain.type.ChatId
@@ -183,7 +184,7 @@ class ChatWebSocketHandler(
                 IncomingWebSocketMessage::class.java
             )
 
-            when(webSocketMessage.type){
+            when (webSocketMessage.type) {
                 IncomingWebSocketMessageType.NEW_MESSAGE -> {
                     val sendMessageDto = objectMapper.readValue(
                         webSocketMessage.payload,
@@ -199,7 +200,37 @@ class ChatWebSocketHandler(
         } catch (
             ex: JacksonException
         ) {
-            //todo handle exception
+            val errorDto = ErrorDto(
+                code = "INVALID_MESSAGE",
+                message = "Incoming JSON or UUID is not valid."
+            )
+            logger.error("Could not parse message ${message.payload}", ex)
+            sendError(
+                session = userSession.session,
+                error = errorDto
+            )
+        }
+    }
+
+    private fun sendError(
+        session: WebSocketSession,
+        error: ErrorDto
+    ) {
+        val payload = objectMapper.writeValueAsString(error)
+        val outgoingWebSocketMessage = OutgoingWebSocketMessage(
+            type = OutgoingWebSocketMessageType.ERROR,
+            payload = payload
+        )
+        val webSocketMessage = objectMapper.writeValueAsString(
+            outgoingWebSocketMessage
+        )
+
+        try {
+            val textMessage = TextMessage(webSocketMessage)
+
+            session.sendMessage(textMessage)
+        } catch (ex: Exception) {
+            logger.error("Error while sending message", ex)
         }
     }
 }
