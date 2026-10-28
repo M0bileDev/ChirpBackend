@@ -1,5 +1,6 @@
 package com.mobidev.studio.chirp.api.ws
 
+import com.mobidev.studio.chirp.api.dto.SendMessageDto
 import com.mobidev.studio.chirp.domain.type.ChatId
 import com.mobidev.studio.chirp.domain.type.UserId
 import com.mobidev.studio.chirp.service.ChatMessageService
@@ -13,7 +14,6 @@ import org.springframework.web.socket.TextMessage
 import org.springframework.web.socket.WebSocketSession
 import org.springframework.web.socket.handler.TextWebSocketHandler
 import tools.jackson.databind.ObjectMapper
-import java.awt.SystemColor.text
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.locks.ReentrantReadWriteLock
 import kotlin.concurrent.read
@@ -97,24 +97,46 @@ class ChatWebSocketHandler(
             userToSessions[userId] ?: emptySet()
         }
 
-        if(userSessionsId.isEmpty()) return
+        if (userSessionsId.isEmpty()) return
 
         userSessionsId.forEach { sessionId ->
             val userSession = connectionLock.read {
                 sessions[sessionId] ?: return@forEach
             }
 
-            if(!userSession.session.isOpen){
+            if (!userSession.session.isOpen) {
                 try {
                     val messageJson = objectMapper.writeValueAsString(message)
                     val textMessage = TextMessage(messageJson)
 
                     userSession.session.sendMessage(textMessage)
                     logger.debug("Sent message to user {}: {}", userId, messageJson)
-                }catch (ex: Exception){
+                } catch (ex: Exception) {
                     logger.error("Error while sending message to user $userId", ex)
                 }
             }
         }
     }
+
+    private fun broadcastToChat(
+        chatId: ChatId,
+        message: OutgoingWebSocketMessage
+    ) {
+        val chatSessions = connectionLock.read {
+            chatToSessions[chatId]?.toList() ?: emptyList()
+        }
+
+        chatSessions.forEach { sessionId ->
+            val userSession = connectionLock.read {
+                sessions[sessionId]
+            } ?: return@forEach
+
+            sendTextMessageToUser(
+                userId = userSession.userId,
+                message = message,
+            )
+        }
+    }
+
+
 }
