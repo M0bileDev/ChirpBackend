@@ -1,6 +1,7 @@
 package com.mobidev.studio.chirp.api.ws
 
 import com.mobidev.studio.chirp.api.dto.SendMessageDto
+import com.mobidev.studio.chirp.api.mappers.toChatMessageDto
 import com.mobidev.studio.chirp.domain.type.ChatId
 import com.mobidev.studio.chirp.domain.type.UserId
 import com.mobidev.studio.chirp.service.ChatMessageService
@@ -138,5 +139,30 @@ class ChatWebSocketHandler(
         }
     }
 
+    private fun handleSendMessage(
+        dto: SendMessageDto,
+        senderId: UserId,
+    ) {
+        val userChatIds = connectionLock.read { userChatIds[senderId] } ?: return
 
+        if (dto.chatId !in userChatIds) return
+
+        val savedMessage = chatMessageService.sendMessage(
+            chatId = dto.chatId,
+            senderId = senderId,
+            content = dto.content,
+            messageId = dto.messageId
+        )
+
+        val payload = objectMapper.writeValueAsString(savedMessage.toChatMessageDto())
+        val message = OutgoingWebSocketMessage(
+            type = OutgoingWebSocketMessageType.NEW_MESSAGE,
+            payload = payload,
+        )
+
+        broadcastToChat(
+            chatId = dto.chatId,
+            message = message
+        )
+    }
 }
