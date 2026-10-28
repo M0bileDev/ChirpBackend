@@ -9,11 +9,14 @@ import org.slf4j.LoggerFactory
 import org.springframework.http.HttpHeaders
 import org.springframework.stereotype.Component
 import org.springframework.web.socket.CloseStatus
+import org.springframework.web.socket.TextMessage
 import org.springframework.web.socket.WebSocketSession
 import org.springframework.web.socket.handler.TextWebSocketHandler
 import tools.jackson.databind.ObjectMapper
+import java.awt.SystemColor.text
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.locks.ReentrantReadWriteLock
+import kotlin.concurrent.read
 import kotlin.concurrent.write
 
 // manages active connections, properly receives messages
@@ -87,5 +90,31 @@ class ChatWebSocketHandler(
 
         // connection established
         logger.info("Websocket connection established for user $userId.")
+    }
+
+    private fun sendTextMessageToUser(userId: UserId, message: OutgoingWebSocketMessage) {
+        val userSessionsId = connectionLock.read {
+            userToSessions[userId] ?: emptySet()
+        }
+
+        if(userSessionsId.isEmpty()) return
+
+        userSessionsId.forEach { sessionId ->
+            val userSession = connectionLock.read {
+                sessions[sessionId] ?: return@forEach
+            }
+
+            if(!userSession.session.isOpen){
+                try {
+                    val messageJson = objectMapper.writeValueAsString(message)
+                    val textMessage = TextMessage(messageJson)
+
+                    userSession.session.sendMessage(textMessage)
+                    logger.debug("Sent message to user {}: {}", userId, messageJson)
+                }catch (ex: Exception){
+                    logger.error("Error while sending message to user $userId", ex)
+                }
+            }
+        }
     }
 }
