@@ -6,6 +6,7 @@ import com.mobidev.studio.chirp.api.dto.ErrorDto
 import com.mobidev.studio.chirp.api.dto.SendMessageDto
 import com.mobidev.studio.chirp.api.mappers.toChatMessageDto
 import com.mobidev.studio.chirp.domain.event.ChatParticipantsJoinedEvent
+import com.mobidev.studio.chirp.domain.event.ChatParticipantsLeftEvent
 import com.mobidev.studio.chirp.domain.event.MessageDeletedEvent
 import com.mobidev.studio.chirp.domain.type.ChatId
 import com.mobidev.studio.chirp.domain.type.UserId
@@ -280,18 +281,47 @@ class ChatWebSocketHandler(
             }
         }
 
-        val dto = ChatParticipantsChangedDto(
-            chatId = chatParticipantsJoinedEvent.chatId,
+        //second, broadcast the change over ws, client will fetch changes over POST request (participant joined, left, etc.)
+        broadcastChatParticipantsChanged(
+            chatId = chatParticipantsJoinedEvent.chatId
         )
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    fun onLeftChat(chatParticipantsLeftEvent: ChatParticipantsLeftEvent) {
+        //first sync hashmaps
+        connectionLock.write {
+            userChatIds.compute(chatParticipantsLeftEvent.userId) { _, chatIds ->
+                chatIds
+                    ?.apply { remove(chatParticipantsLeftEvent.chatId) }
+                    ?.takeIf { it.isNotEmpty() }
+            }
+
+            userToSessions[chatParticipantsLeftEvent.chatId]?.forEach { sessionId ->
+                chatToSessions.compute(chatParticipantsLeftEvent.chatId) { _, sessionIds ->
+                    sessionIds
+                        ?.apply { remove(sessionId) }
+                        ?.takeIf { it.isNotEmpty() }
+                }
+            }
+        }
+
+        //second, broadcast the change over ws, client will fetch changes over POST request (participant joined, left, etc.)
+        broadcastChatParticipantsChanged(
+            chatId = chatParticipantsLeftEvent.chatId
+        )
+    }
+
+    private fun broadcastChatParticipantsChanged(chatId: ChatId) {
+        val dto = ChatParticipantsChangedDto(chatId = chatId)
         val payload = objectMapper.writeValueAsString(dto)
         val message = OutgoingWebSocketMessage(
             type = OutgoingWebSocketMessageType.CHAT_PARTICIPANTS_CHANGED,
             payload = payload
         )
 
-        //broadcast the change over ws, client will fetch changes over POST request (participant joined, left, etc.)
         broadcastToChat(
-            chatId = chatParticipantsJoinedEvent.chatId,
+            chatId = chatId,
             message = message
         )
     }
