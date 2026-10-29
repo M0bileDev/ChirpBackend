@@ -1,9 +1,11 @@
 package com.mobidev.studio.chirp.api.ws
 
+import com.mobidev.studio.chirp.api.dto.ChatParticipantsChangedDto
 import com.mobidev.studio.chirp.api.dto.DeleteMessageDto
 import com.mobidev.studio.chirp.api.dto.ErrorDto
 import com.mobidev.studio.chirp.api.dto.SendMessageDto
 import com.mobidev.studio.chirp.api.mappers.toChatMessageDto
+import com.mobidev.studio.chirp.domain.event.ChatParticipantsJoinedEvent
 import com.mobidev.studio.chirp.domain.event.MessageDeletedEvent
 import com.mobidev.studio.chirp.domain.type.ChatId
 import com.mobidev.studio.chirp.domain.type.UserId
@@ -255,6 +257,41 @@ class ChatWebSocketHandler(
 
         broadcastToChat(
             chatId = messageDeletedEvent.chatId,
+            message = message
+        )
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    fun onJoinChat(chatParticipantsJoinedEvent: ChatParticipantsJoinedEvent) {
+        //first sync hashmaps
+        connectionLock.write {
+            chatParticipantsJoinedEvent.userIds.forEach { userId ->
+                userChatIds.compute(userId) { _, chatIds ->
+                    (chatIds ?: mutableSetOf()).apply {
+                        add(chatParticipantsJoinedEvent.chatId)
+                    }
+                }
+
+                userToSessions[userId]?.forEach { sessionId ->
+                    chatToSessions.compute(chatParticipantsJoinedEvent.chatId) { _, sessionIds ->
+                        (sessionIds ?: mutableSetOf()).apply { add(sessionId) }
+                    }
+                }
+            }
+        }
+
+        val dto = ChatParticipantsChangedDto(
+            chatId = chatParticipantsJoinedEvent.chatId,
+        )
+        val payload = objectMapper.writeValueAsString(dto)
+        val message = OutgoingWebSocketMessage(
+            type = OutgoingWebSocketMessageType.CHAT_PARTICIPANTS_CHANGED,
+            payload = payload
+        )
+
+        //broadcast the change over ws, client will fetch changes over POST request (participant joined, left, etc.)
+        broadcastToChat(
+            chatId = chatParticipantsJoinedEvent.chatId,
             message = message
         )
     }
