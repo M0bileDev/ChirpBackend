@@ -1,8 +1,10 @@
 package com.mobidev.studio.chirp.api.ws
 
+import com.mobidev.studio.chirp.api.dto.DeleteMessageDto
 import com.mobidev.studio.chirp.api.dto.ErrorDto
 import com.mobidev.studio.chirp.api.dto.SendMessageDto
 import com.mobidev.studio.chirp.api.mappers.toChatMessageDto
+import com.mobidev.studio.chirp.domain.event.MessageDeletedEvent
 import com.mobidev.studio.chirp.domain.type.ChatId
 import com.mobidev.studio.chirp.domain.type.UserId
 import com.mobidev.studio.chirp.service.ChatMessageService
@@ -11,6 +13,8 @@ import com.mobidev.studio.chirp.service.JwtService
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpHeaders
 import org.springframework.stereotype.Component
+import org.springframework.transaction.event.TransactionPhase
+import org.springframework.transaction.event.TransactionalEventListener
 import org.springframework.web.socket.CloseStatus
 import org.springframework.web.socket.TextMessage
 import org.springframework.web.socket.WebSocketSession
@@ -232,5 +236,26 @@ class ChatWebSocketHandler(
         } catch (ex: Exception) {
             logger.error("Error while sending message", ex)
         }
+    }
+
+    // this listener executes after the value was published through
+    // event like applicationEventPublisher.publishEvent(messageDeletedEvent), no additional dependencies needed
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    fun onDeleteMessage(messageDeletedEvent: MessageDeletedEvent) {
+
+        val deleteMessageDto = DeleteMessageDto(
+            chatId = messageDeletedEvent.chatId,
+            messageId = messageDeletedEvent.messageId
+        )
+        val payload = objectMapper.writeValueAsString(deleteMessageDto)
+        val message = OutgoingWebSocketMessage(
+            type = OutgoingWebSocketMessageType.MESSAGE_DELETED,
+            payload = payload
+        )
+
+        broadcastToChat(
+            chatId = messageDeletedEvent.chatId,
+            message = message
+        )
     }
 }
