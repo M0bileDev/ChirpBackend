@@ -2,7 +2,7 @@ package com.mobidev.studio.chirp.service
 
 import com.mobidev.studio.chirp.api.dto.ChatMessageDto
 import com.mobidev.studio.chirp.api.mappers.toChatMessageDto
-import com.mobidev.studio.chirp.domain.event.ChatParticipantLeftEvent
+import com.mobidev.studio.chirp.domain.event.ChatParticipantsLeftEvent
 import com.mobidev.studio.chirp.domain.event.ChatParticipantsJoinedEvent
 import com.mobidev.studio.chirp.domain.exception.ChatNotFoundException
 import com.mobidev.studio.chirp.domain.exception.ChatParticipantNotFoundException
@@ -121,12 +121,12 @@ class ChatService(
         }
         chatRepository.save(updatedChat)
 
-        val chatParticipantLeftEvent = ChatParticipantLeftEvent(
+        val chatParticipantsLeftEvent = ChatParticipantsLeftEvent(
             chatId = chatId,
             userId = userId
         )
         applicationEventPublisher.publishEvent(
-            chatParticipantLeftEvent
+            chatParticipantsLeftEvent
         )
     }
 
