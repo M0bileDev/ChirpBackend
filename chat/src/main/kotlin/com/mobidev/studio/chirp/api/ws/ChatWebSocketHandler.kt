@@ -15,10 +15,12 @@ import com.mobidev.studio.chirp.service.ChatService
 import com.mobidev.studio.chirp.service.JwtService
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpHeaders
+import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import org.springframework.transaction.event.TransactionPhase
 import org.springframework.transaction.event.TransactionalEventListener
 import org.springframework.web.socket.CloseStatus
+import org.springframework.web.socket.PingMessage
 import org.springframework.web.socket.TextMessage
 import org.springframework.web.socket.WebSocketSession
 import org.springframework.web.socket.handler.TextWebSocketHandler
@@ -324,5 +326,51 @@ class ChatWebSocketHandler(
             chatId = chatId,
             message = message
         )
+    }
+
+    @Scheduled(fixedDelay = PING_INTERVAL_MS)
+    private fun pingClients() {
+        val currentTime = System.currentTimeMillis()
+        val sessionsToTerminate = mutableListOf<String>()
+        val sessionsSnapshot = connectionLock.read { sessions.toMap() }
+
+        sessionsSnapshot.forEach { (sessionId, userSession) ->
+            try {
+                if (userSession.session.isOpen) {
+                    val lastPong = userSession.lastPongTimeStamp
+
+                    if (currentTime - lastPong > PONG_TIMEOUT_MS) {
+                        logger.warn("Session $sessionId has timed out, closing connection.")
+                        sessionsToTerminate.add(sessionId)
+                        return@forEach
+                    }
+
+                    //PingMessage -> universal message type
+                    userSession.session.sendMessage(PingMessage())
+                    logger.debug("Sent ping to {}", userSession.userId)
+                }
+            } catch (ex: Exception) {
+                logger.error("Could not ping session $sessionId", ex)
+                sessionsToTerminate.add(sessionId)
+            }
+        }
+
+        sessionsToTerminate.forEach { sessionId ->
+            connectionLock.read {
+                sessions[sessionId]?.session?.let { session ->
+                    try {
+                        val status = CloseStatus.GOING_AWAY.withReason("Ping timeout")
+                        session.close(status)
+                    } catch (ex: Exception) {
+                        logger.error("Could not close connection for session: ${session.id}", ex)
+                    }
+                }
+            }
+        }
+    }
+
+    companion object {
+        private const val PING_INTERVAL_MS = 30_000L
+        private const val PONG_TIMEOUT_MS = 60_000L
     }
 }
