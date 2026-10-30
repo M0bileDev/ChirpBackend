@@ -7,5 +7,6 @@ typealias SessionId = String
 
 data class UserSession(
     val userId: UserId,
-    val session: WebSocketSession
+    val session: WebSocketSession,
+    val lastPongTimeStamp: Long = System.currentTimeMillis()
 )
