@@ -408,6 +408,16 @@ class ChatWebSocketHandler(
         }
     }
 
+    override fun handleTransportError(
+        session: WebSocketSession,
+        exception: Throwable
+    ) {
+        logger.error("Transport error for session ${session.id}", exception)
+
+        val status = CloseStatus.SERVER_ERROR.withReason("Transport error")
+        session.close(status)
+    }
+
     companion object {
         private const val PING_INTERVAL_MS = 30_000L
         private const val PONG_TIMEOUT_MS = 60_000L
