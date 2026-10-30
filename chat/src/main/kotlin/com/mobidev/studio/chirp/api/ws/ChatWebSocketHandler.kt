@@ -19,10 +19,7 @@ import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import org.springframework.transaction.event.TransactionPhase
 import org.springframework.transaction.event.TransactionalEventListener
-import org.springframework.web.socket.CloseStatus
-import org.springframework.web.socket.PingMessage
-import org.springframework.web.socket.TextMessage
-import org.springframework.web.socket.WebSocketSession
+import org.springframework.web.socket.*
 import org.springframework.web.socket.handler.TextWebSocketHandler
 import tools.jackson.core.JacksonException
 import tools.jackson.databind.ObjectMapper
@@ -367,6 +364,20 @@ class ChatWebSocketHandler(
                 }
             }
         }
+    }
+
+    override fun handlePongMessage(
+        session: WebSocketSession,
+        message: PongMessage
+    ) {
+        connectionLock.write {
+            sessions.compute(session.id) { _, userSession ->
+                userSession?.copy(
+                    lastPongTimeStamp = System.currentTimeMillis()
+                )
+            }
+        }
+        logger.debug("Received pong from ${session.id}")
     }
 
     companion object {
