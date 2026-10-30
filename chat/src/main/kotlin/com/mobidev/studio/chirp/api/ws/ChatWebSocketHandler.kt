@@ -380,6 +380,34 @@ class ChatWebSocketHandler(
         logger.debug("Received pong from ${session.id}")
     }
 
+    // Connection has been closed by either side, or after a transport error has occurred
+    override fun afterConnectionClosed(
+        session: WebSocketSession,
+        status: CloseStatus
+    ) {
+        connectionLock.write {
+            sessions.remove(session.id)?.let { userSession ->
+                val userId = userSession.userId
+
+                userToSessions.compute(userId) { _, sessionIds ->
+                    sessionIds
+                        ?.apply { remove(session.id) }
+                        ?.takeIf { it.isNotEmpty() }
+                }
+
+                userChatIds[userId]?.forEach { chatId ->
+                    chatToSessions.compute(chatId) { _, sessionIds ->
+                        sessionIds
+                            ?.apply { remove(session.id) }
+                            ?.takeIf { it.isNotEmpty() }
+                    }
+                }
+
+                logger.info("Websocket session closed for user $userId")
+            }
+        }
+    }
+
     companion object {
         private const val PING_INTERVAL_MS = 30_000L
         private const val PONG_TIMEOUT_MS = 60_000L
