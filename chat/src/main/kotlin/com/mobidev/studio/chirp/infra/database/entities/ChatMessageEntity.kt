@@ -50,10 +50,7 @@ class ChatMessageEntity(
     @JoinColumn(
         name = "sender_id",
         nullable = false,
-        insertable = false,
-        updatable = false
     )
-//    nullable for the same reason as above
     var sender: ChatParticipantEntity,
     @CreationTimestamp
     var createdAt: Instant = Instant.now(),

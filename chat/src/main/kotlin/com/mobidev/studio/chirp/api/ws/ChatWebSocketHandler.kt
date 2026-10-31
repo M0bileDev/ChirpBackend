@@ -8,6 +8,7 @@ import com.mobidev.studio.chirp.api.mappers.toChatMessageDto
 import com.mobidev.studio.chirp.domain.event.ChatParticipantsJoinedEvent
 import com.mobidev.studio.chirp.domain.event.ChatParticipantsLeftEvent
 import com.mobidev.studio.chirp.domain.event.MessageDeletedEvent
+import com.mobidev.studio.chirp.domain.exception.InvalidTokenException
 import com.mobidev.studio.chirp.domain.type.ChatId
 import com.mobidev.studio.chirp.domain.type.UserId
 import com.mobidev.studio.chirp.service.ChatMessageService
@@ -64,7 +65,17 @@ class ChatWebSocketHandler(
                 return
             }
 
-        val userId = jwtService.getUserIdFromToken(authHeader)
+        // invalid/expired token -> close the session instead of letting the exception escape the handler
+        val userId = try {
+            jwtService.getUserIdFromToken(authHeader)
+        } catch (_: InvalidTokenException) {
+            logger.warn("Session ${session.id} was closed due to invalid token.")
+
+            val closeStatus = CloseStatus.SERVER_ERROR.withReason("Authentication failed.")
+            session.close(closeStatus)
+
+            return
+        }
         val userSession = UserSession(
             userId = userId,
             session = session,
@@ -109,20 +120,29 @@ class ChatWebSocketHandler(
         if (userSessionsId.isEmpty()) return
 
         userSessionsId.forEach { sessionId ->
-            val userSession = connectionLock.read {
-                sessions[sessionId] ?: return@forEach
-            }
+            sendTextMessageToSession(
+                sessionId = sessionId,
+                message = message,
+            )
+        }
+    }
 
-            if (!userSession.session.isOpen) {
-                try {
-                    val messageJson = objectMapper.writeValueAsString(message)
-                    val textMessage = TextMessage(messageJson)
+    // sends to exactly one session, so callers that already iterate over sessions
+    // (like broadcastToChat) don't fan out to every session of the same user again
+    private fun sendTextMessageToSession(sessionId: SessionId, message: OutgoingWebSocketMessage) {
+        val userSession = connectionLock.read {
+            sessions[sessionId]
+        } ?: return
 
-                    userSession.session.sendMessage(textMessage)
-                    logger.debug("Sent message to user {}: {}", userId, messageJson)
-                } catch (ex: Exception) {
-                    logger.error("Error while sending message to user $userId", ex)
-                }
+        if (userSession.session.isOpen) {
+            try {
+                val messageJson = objectMapper.writeValueAsString(message)
+                val textMessage = TextMessage(messageJson)
+
+                userSession.session.sendMessage(textMessage)
+                logger.debug("Sent message to user {}: {}", userSession.userId, messageJson)
+            } catch (ex: Exception) {
+                logger.error("Error while sending message to user ${userSession.userId}", ex)
             }
         }
     }
@@ -135,13 +155,11 @@ class ChatWebSocketHandler(
             chatToSessions[chatId]?.toList() ?: emptyList()
         }
 
+        // chatToSessions already holds every session of every participant,
+        // so each one gets the message exactly once
         chatSessions.forEach { sessionId ->
-            val userSession = connectionLock.read {
-                sessions[sessionId]
-            } ?: return@forEach
-
-            sendTextMessageToUser(
-                userId = userSession.userId,
+            sendTextMessageToSession(
+                sessionId = sessionId,
                 message = message,
             )
         }
@@ -296,7 +314,7 @@ class ChatWebSocketHandler(
                     ?.takeIf { it.isNotEmpty() }
             }
 
-            userToSessions[chatParticipantsLeftEvent.chatId]?.forEach { sessionId ->
+            userToSessions[chatParticipantsLeftEvent.userId]?.forEach { sessionId ->
                 chatToSessions.compute(chatParticipantsLeftEvent.chatId) { _, sessionIds ->
                     sessionIds
                         ?.apply { remove(sessionId) }
@@ -378,6 +396,44 @@ class ChatWebSocketHandler(
             }
         }
         logger.debug("Received pong from ${session.id}")
+    }
+
+    // Connection has been closed by either side, or after a transport error has occurred
+    override fun afterConnectionClosed(
+        session: WebSocketSession,
+        status: CloseStatus
+    ) {
+        connectionLock.write {
+            sessions.remove(session.id)?.let { userSession ->
+                val userId = userSession.userId
+
+                userToSessions.compute(userId) { _, sessionIds ->
+                    sessionIds
+                        ?.apply { remove(session.id) }
+                        ?.takeIf { it.isNotEmpty() }
+                }
+
+                userChatIds[userId]?.forEach { chatId ->
+                    chatToSessions.compute(chatId) { _, sessionIds ->
+                        sessionIds
+                            ?.apply { remove(session.id) }
+                            ?.takeIf { it.isNotEmpty() }
+                    }
+                }
+
+                logger.info("Websocket session closed for user $userId")
+            }
+        }
+    }
+
+    override fun handleTransportError(
+        session: WebSocketSession,
+        exception: Throwable
+    ) {
+        logger.error("Transport error for session ${session.id}", exception)
+
+        val status = CloseStatus.SERVER_ERROR.withReason("Transport error")
+        session.close(status)
     }
 
     companion object {
