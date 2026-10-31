@@ -58,6 +58,26 @@ class SupabaseStorageService(
         )
     }
 
+    fun deleteFile(
+        url: String
+    ) {
+        val path = if (url.contains(OBJECT_PATH)) {
+            url.substringAfter(OBJECT_PATH)
+        } else throw StorageException("Invalid file URL format")
+        val deleteUrl = "storage/v1/object/$path"
+
+        val response = supabaseRestClient
+            .delete()
+            .uri(deleteUrl)
+            .retrieve()
+            // response without a body
+            .toBodilessEntity()
+
+        if (response.statusCode.isError) {
+            throw StorageException("Unable to delete file, issue: ${response.statusCode.value()}")
+        }
+    }
+
     companion object {
         private val supportedMimeTypes = mapOf(
             "image/jpeg" to "image/jpg",
@@ -67,5 +87,6 @@ class SupabaseStorageService(
         )
         private const val CONTENT_TYPE = "Content-Type"
         private const val UPLOAD_URL_EXPIRATION_TIME = 300L
+        private const val OBJECT_PATH = "/object/public/"
     }
 }
