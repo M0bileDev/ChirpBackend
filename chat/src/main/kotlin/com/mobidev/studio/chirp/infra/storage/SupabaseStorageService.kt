@@ -9,4 +9,12 @@ class SupabaseStorageService(
     private val supabaseRestClientConfig: SupabaseRestClientConfig
 ) {
 
+    companion object {
+        private val supportedMimeTypes = mapOf(
+            "image/jpeg" to "image/jpg",
+            "image/jpg" to "image/jpg",
+            "image/png" to "image/png",
+            "image/webp" to "image/webp",
+        )
+    }
 }
