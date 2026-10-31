@@ -1,10 +1,15 @@
 package com.mobidev.studio.chirp.infra.storage
 
 import com.mobidev.studio.chirp.api.dto.SignedUploadDto
+import com.mobidev.studio.chirp.domain.exception.InvalidProfilePictureException
 import com.mobidev.studio.chirp.domain.exception.StorageException
+import com.mobidev.studio.chirp.domain.model.ProfilePictureUploadCredentials
+import com.mobidev.studio.chirp.domain.type.UserId
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import org.springframework.web.client.RestClient
+import java.time.Instant
+import java.util.*
 
 @Service
 class SupabaseStorageService(
@@ -31,6 +36,26 @@ class SupabaseStorageService(
             ?: throw StorageException("Failed to create signed url")
 
         return "$supabaseUrl/storage/v1${response.url}"
+    }
+
+    fun generateSignedUploadUrl(userId: UserId, mimeType: String): ProfilePictureUploadCredentials {
+        val extension =
+            supportedMimeTypes[mimeType] ?: throw InvalidProfilePictureException("Unsupported mime type $mimeType")
+        val fileName = "user_${userId}_${UUID.randomUUID()}.$extension"
+        val path = "profile-pictures/$fileName"
+        val publicUrl = "$supabaseUrl/storage/v1/object/public/$path"
+
+        return ProfilePictureUploadCredentials(
+            uploadUrl = createSignedUrl(
+                path = path,
+                expiresInSeconds = UPLOAD_URL_EXPIRATION_TIME
+            ),
+            publicUrl = publicUrl,
+            headers = mapOf(
+                CONTENT_TYPE to extension
+            ),
+            expiresAt = Instant.now().plusSeconds(UPLOAD_URL_EXPIRATION_TIME)
+        )
     }
 
     companion object {
