@@ -1,13 +1,11 @@
 package com.mobidev.studio.chirp.api.ws
 
-import com.mobidev.studio.chirp.api.dto.ChatParticipantsChangedDto
-import com.mobidev.studio.chirp.api.dto.DeleteMessageDto
-import com.mobidev.studio.chirp.api.dto.ErrorDto
-import com.mobidev.studio.chirp.api.dto.SendMessageDto
+import com.mobidev.studio.chirp.api.dto.*
 import com.mobidev.studio.chirp.api.mappers.toChatMessageDto
 import com.mobidev.studio.chirp.domain.event.ChatParticipantsJoinedEvent
 import com.mobidev.studio.chirp.domain.event.ChatParticipantsLeftEvent
 import com.mobidev.studio.chirp.domain.event.MessageDeletedEvent
+import com.mobidev.studio.chirp.domain.event.ProfilePictureUpdatedEvent
 import com.mobidev.studio.chirp.domain.exception.InvalidTokenException
 import com.mobidev.studio.chirp.domain.type.ChatId
 import com.mobidev.studio.chirp.domain.type.UserId
@@ -434,6 +432,56 @@ class ChatWebSocketHandler(
 
         val status = CloseStatus.SERVER_ERROR.withReason("Transport error")
         session.close(status)
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    fun onProfilePictureUpdated(
+        event: ProfilePictureUpdatedEvent
+    ) {
+        val userChats = connectionLock.read {
+            userChatIds[event.userId]?.toList() ?: emptyList()
+        }
+        val dto = ProfilePictureUpdateDto(
+            userId = event.userId,
+            newUrl = event.newUrl
+        )
+
+        val sessionIds = mutableSetOf<String>()
+        userChats.forEach { chatId ->
+            connectionLock.read {
+                chatToSessions[chatId]?.let { sessions ->
+                    sessionIds.addAll(sessions)
+                }
+            }
+        }
+
+        val payload = objectMapper.writeValueAsString(
+            dto
+        )
+        val outgoingWebSocketMessage = OutgoingWebSocketMessage(
+            type = OutgoingWebSocketMessageType.PROFILE_PICTURE_UPDATED,
+            payload = payload
+        )
+        val messageJson = objectMapper.writeValueAsString(
+            outgoingWebSocketMessage
+        )
+
+        sessionIds.forEach { sessionId ->
+            val userSession = connectionLock.read {
+                sessions[sessionId]
+            } ?: return@forEach
+
+            try {
+                if (userSession.session.isOpen) {
+                    val textMessage = TextMessage(
+                        messageJson
+                    )
+                    userSession.session.sendMessage(textMessage)
+                }
+            } catch (ex: Exception) {
+                logger.error("Could not update session $sessionId with profile picture", ex)
+            }
+        }
     }
 
     companion object {
