@@ -27,6 +27,7 @@ class SupabaseStorageService(
         val response = supabaseRestClient
             .post()
             .uri("/storage/v1/object/upload/sign/$path")
+            .header(CONTENT_TYPE, APPLICATION_JSON)
             // information when upload url expires
             .body(json)
             // retrieve the response
@@ -88,5 +89,6 @@ class SupabaseStorageService(
         private const val CONTENT_TYPE = "Content-Type"
         private const val UPLOAD_URL_EXPIRATION_TIME = 300L
         private const val OBJECT_PATH = "/object/public/"
+        private const val APPLICATION_JSON = "application/json"
     }
 }
