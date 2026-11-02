@@ -4,9 +4,11 @@ import com.mobidev.studio.chirp.api.dto.ChatParticipantDto
 import com.mobidev.studio.chirp.api.dto.PictureUploadDto
 import com.mobidev.studio.chirp.api.mappers.toChatParticipantDto
 import com.mobidev.studio.chirp.api.mappers.toDto
+import com.mobidev.studio.chirp.api.request.ConfirmProfilePictureRequest
 import com.mobidev.studio.chirp.api.util.requestUserId
 import com.mobidev.studio.chirp.service.ChatParticipantService
 import com.mobidev.studio.chirp.service.ProfilePictureService
+import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.server.ResponseStatusException
@@ -42,5 +44,15 @@ class ChatParticipantController(
             userId = requestUserId,
             mimeType = mimeType
         ).toDto()
+    }
+
+    @PostMapping("/profile-picture-confirm")
+    fun confirmProfilePictureUpload(
+        @Valid @RequestBody body: ConfirmProfilePictureRequest
+    ) {
+        profilePictureService.confirmProfilePictureUpload(
+            userId = requestUserId,
+            publicUrl = body.publicUrl
+        )
     }
 }
