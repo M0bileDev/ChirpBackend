@@ -35,4 +35,14 @@ class ChatExceptionHandler {
         "code" to "INVALID_PROFILE_PICTURE",
         "message" to e.message
     )
+
+    @ExceptionHandler(
+        StorageException::class,
+    )
+    // client cannot correct input
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    fun onStorageException(e: StorageException) = mapOf(
+        "code" to "STORAGE_ERROR",
+        "message" to e.message
+    )
 }
