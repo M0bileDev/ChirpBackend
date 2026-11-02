@@ -2,11 +2,13 @@ package com.mobidev.studio.chirp.service
 
 import com.mobidev.studio.chirp.domain.event.ProfilePictureUpdatedEvent
 import com.mobidev.studio.chirp.domain.exception.ChatParticipantNotFoundException
+import com.mobidev.studio.chirp.domain.exception.InvalidProfilePictureException
 import com.mobidev.studio.chirp.domain.model.ProfilePictureUploadCredentials
 import com.mobidev.studio.chirp.domain.type.UserId
 import com.mobidev.studio.chirp.infra.database.repositories.ChatParticipantRepository
 import com.mobidev.studio.chirp.infra.storage.SupabaseStorageService
 import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
@@ -14,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional
 
 @Service
 class ProfilePictureService(
+    @param:Value("\${supabase.url}") private val supabaseUrl: String,
     private val supabaseStorageService: SupabaseStorageService,
     private val chatParticipantsRepository: ChatParticipantRepository,
     private val applicationEventPublisher: ApplicationEventPublisher
@@ -60,6 +63,8 @@ class ProfilePictureService(
         userId: UserId,
         publicUrl: String
     ) {
+        if (!publicUrl.startsWith(supabaseUrl)) throw InvalidProfilePictureException("Invalid profile picture url")
+
         val participant = chatParticipantsRepository.findByIdOrNull(userId)
             ?: throw ChatParticipantNotFoundException(userId = userId)
         val oldPictureUrl = participant.profilePicture

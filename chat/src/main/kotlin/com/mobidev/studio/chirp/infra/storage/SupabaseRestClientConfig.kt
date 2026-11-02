@@ -17,14 +17,11 @@ class SupabaseRestClientConfig(
             .baseUrl(supabaseUrl)
             // every request will contain authorization header
             .defaultHeader(AUTHORIZATION_HEADER, "$BEARER_PREFIX $supabaseServiceKey")
-            .defaultHeader(CONTENT_TYPE, APPLICATION_JSON)
             .build()
     }
 
     companion object {
         private const val AUTHORIZATION_HEADER = "Authorization"
         private const val BEARER_PREFIX = "Bearer"
-        private const val CONTENT_TYPE = "Content-Type"
-        private const val APPLICATION_JSON = "application/json"
     }
 }
