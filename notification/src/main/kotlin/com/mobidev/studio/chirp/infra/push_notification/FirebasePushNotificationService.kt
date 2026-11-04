@@ -4,11 +4,15 @@ import com.google.auth.oauth2.GoogleCredentials
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
 import com.google.firebase.messaging.*
+import com.mobidev.studio.chirp.domain.mappers.toSendResult
+import com.mobidev.studio.chirp.domain.model.Platform
+import com.mobidev.studio.chirp.domain.model.PushNotification
+import com.mobidev.studio.chirp.domain.model.PushNotificationSendResult
+import jakarta.annotation.PostConstruct
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.io.ResourceLoader
 import org.springframework.stereotype.Service
-import javax.annotation.PostConstruct
 
 @Service
 class FirebasePushNotificationService(
@@ -60,7 +64,6 @@ class FirebasePushNotificationService(
         }
     }
 
-
     private fun Message.Builder.configAndroid(
         collapsedKey: String
     ) {
@@ -73,7 +76,7 @@ class FirebasePushNotificationService(
         setAndroidConfig(androidConfig)
     }
 
-    private fun Message.Builder.configiOS(
+    private fun Message.Builder.configOS(
         threadId: String
     ) {
         val aps = Aps.builder()
@@ -85,6 +88,49 @@ class FirebasePushNotificationService(
             .build()
 
         setApnsConfig(apnsConfig)
+    }
+
+    fun sendNotification(
+        pushNotification: PushNotification
+    ): PushNotificationSendResult {
+
+        val chatIdKey = pushNotification.chatId.toString()
+        val messages = pushNotification.recipients
+            .map { recipient ->
+                val notification = Notification.builder()
+                    .setTitle(pushNotification.title)
+                    .setBody(pushNotification.message)
+                    .build()
+
+                Message.builder()
+                    .setToken(recipient.token)
+                    .setNotification(notification)
+                    .apply {
+                        pushNotification.data.forEach { (key, value) ->
+                            putData(key, value)
+                        }
+
+                        when (recipient.platform) {
+                            Platform.ANDROID -> configAndroid(
+                                collapsedKey = chatIdKey
+                            )
+
+                            Platform.IOS -> configOS(
+                                threadId = chatIdKey
+                            )
+                        }
+
+                    }.build()
+            }
+
+        // which push notification failed/succeeded with reason
+        val response = FirebaseMessaging.getInstance()
+            .sendEach(messages)
+
+        return response.toSendResult(
+            allDeviceTokens = pushNotification.recipients,
+            logger = logger
+        )
     }
 
     companion object {
