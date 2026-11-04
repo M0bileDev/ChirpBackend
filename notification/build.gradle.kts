@@ -25,6 +25,9 @@ dependencies {
 
     //JavaMailSender dependencies
     implementation(libs.spring.boot.starter.mail)
+
+    //Firebase app initializer
+    implementation(libs.firebase.admin.sdk)
 }
 
 tasks.test {

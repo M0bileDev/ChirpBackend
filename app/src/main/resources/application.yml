@@ -120,4 +120,4 @@ supabase:
   service-key: ${SUPABASE_SERVICE_KEY}
 
 firebase:
-  credentials-path: "classpath: firebase-credentials/chirp-firebase-admin-sdk.json"
+  credentials-path: "classpath:firebase-credentials/chirp-firebase-admin-sdk.json"
