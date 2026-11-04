@@ -3,10 +3,7 @@ package com.mobidev.studio.chirp.infra.push_notification
 import com.google.auth.oauth2.GoogleCredentials
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
-import com.google.firebase.messaging.AndroidConfig
-import com.google.firebase.messaging.FirebaseMessaging
-import com.google.firebase.messaging.FirebaseMessagingException
-import com.google.firebase.messaging.Message
+import com.google.firebase.messaging.*
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.io.ResourceLoader
@@ -76,7 +73,22 @@ class FirebasePushNotificationService(
         setAndroidConfig(androidConfig)
     }
 
+    private fun Message.Builder.configiOS(
+        threadId: String
+    ) {
+        val aps = Aps.builder()
+            .setSound(IOS_NOTIFICATION_SOUND_DEFAULT)
+            .setThreadId(threadId)
+            .build()
+        val apnsConfig = ApnsConfig.builder()
+            .setAps(aps)
+            .build()
+
+        setApnsConfig(apnsConfig)
+    }
+
     companion object {
         private const val PACKAGE_NAME = "com.mobidev.studio.chirp"
+        private const val IOS_NOTIFICATION_SOUND_DEFAULT = "default"
     }
 }
