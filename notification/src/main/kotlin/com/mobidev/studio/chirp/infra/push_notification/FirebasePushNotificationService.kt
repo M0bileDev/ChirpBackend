@@ -3,6 +3,7 @@ package com.mobidev.studio.chirp.infra.push_notification
 import com.google.auth.oauth2.GoogleCredentials
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
+import com.google.firebase.messaging.AndroidConfig
 import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.messaging.FirebaseMessagingException
 import com.google.firebase.messaging.Message
@@ -60,5 +61,22 @@ class FirebasePushNotificationService(
             logger.error("Failed to validate Firebase token!", ex)
             false
         }
+    }
+
+
+    private fun Message.Builder.configAndroid(
+        collapsedKey: String
+    ) {
+        val androidConfig = AndroidConfig.builder()
+            .setPriority(AndroidConfig.Priority.HIGH)
+            .setCollapseKey(collapsedKey)
+            .setRestrictedPackageName(PACKAGE_NAME)
+            .build()
+
+        setAndroidConfig(androidConfig)
+    }
+
+    companion object {
+        private const val PACKAGE_NAME = "com.mobidev.studio.chirp"
     }
 }
