@@ -15,7 +15,7 @@ repositories {
 
 dependencies {
     implementation(projects.common)
-
+    // data access layer
     implementation(libs.spring.boot.starter.data.jpa)
     // enable connection to postgresql instance
     runtimeOnly(libs.postgresql)
