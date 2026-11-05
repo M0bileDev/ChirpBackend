@@ -9,6 +9,7 @@ import com.mobidev.studio.chirp.infra.database.repositories.DeviceTokenRepositor
 import com.mobidev.studio.chirp.infra.mappers.toDeviceToken
 import com.mobidev.studio.chirp.infra.mappers.toPlatformEntity
 import com.mobidev.studio.chirp.infra.push_notification.FirebasePushNotificationService
+import jakarta.transaction.Transactional
 import org.springframework.stereotype.Service
 
 @Service
@@ -45,5 +46,13 @@ class PushNotificationService(
         }
 
         return entity.toDeviceToken()
+    }
+
+    @Transactional
+    fun unregisterDevice(
+        token: String
+    ) {
+        val trimmedToken = token.trim()
+        deviceTokenRepository.deleteByToken(trimmedToken)
     }
 }
