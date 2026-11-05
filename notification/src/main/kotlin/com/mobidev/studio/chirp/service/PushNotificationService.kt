@@ -3,6 +3,8 @@ package com.mobidev.studio.chirp.service
 import com.mobidev.studio.chirp.domain.exception.InvalidDeviceTokenException
 import com.mobidev.studio.chirp.domain.model.DeviceToken
 import com.mobidev.studio.chirp.domain.model.Platform
+import com.mobidev.studio.chirp.domain.model.PushNotification
+import com.mobidev.studio.chirp.domain.type.ChatId
 import com.mobidev.studio.chirp.domain.type.UserId
 import com.mobidev.studio.chirp.infra.database.entities.DeviceTokenEntity
 import com.mobidev.studio.chirp.infra.database.repositories.DeviceTokenRepository
@@ -10,6 +12,7 @@ import com.mobidev.studio.chirp.infra.mappers.toDeviceToken
 import com.mobidev.studio.chirp.infra.mappers.toPlatformEntity
 import com.mobidev.studio.chirp.infra.push_notification.FirebasePushNotificationService
 import jakarta.transaction.Transactional
+import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 
 @Service
@@ -18,6 +21,9 @@ class PushNotificationService(
     private val firebasePushNotificationService: FirebasePushNotificationService,
 ) {
 
+    private val logger = LoggerFactory.getLogger(javaClass)
+
+    @Transactional
     fun registerDevice(
         userId: UserId,
         token: String,
@@ -54,5 +60,43 @@ class PushNotificationService(
     ) {
         val trimmedToken = token.trim()
         deviceTokenRepository.deleteByToken(trimmedToken)
+    }
+
+    fun sendNewMessageNotifications(
+        recipientUserIds: List<UserId>,
+        senderUserId: UserId,
+        message: String,
+        chatId: ChatId,
+        senderUsername: String,
+    ) {
+        val deviceTokens = deviceTokenRepository.findByUserIdIn(recipientUserIds)
+        if (deviceTokens.isEmpty()) {
+            logger.info("No device tokens found for $recipientUserIds")
+            return
+        }
+
+        val recipients = deviceTokens
+            .filter { it.userId != senderUserId }
+            .map { it.toDeviceToken() }
+
+        val pushNotification = PushNotification(
+            title = "New message from $senderUsername",
+            recipients = recipients,
+            message = message,
+            chatId = chatId,
+            // additional data read by the client
+            data = mapOf(
+                CHAT_ID to chatId.toString(),
+                TYPE to NEW_MESSAGE
+            )
+        )
+
+        firebasePushNotificationService.sendNotification(pushNotification)
+    }
+
+    companion object {
+        private const val CHAT_ID = "chatId"
+        private const val TYPE = "type"
+        private const val NEW_MESSAGE = "new_message"
     }
 }
