@@ -16,18 +16,18 @@ repositories {
 dependencies {
     implementation(projects.common)
     testImplementation(kotlin("test"))
-
-    //RabbitMQ dependencies
+    // rabbitMQ dependencies
     implementation(libs.spring.boot.starter.amqp)
-
-    //Thymeleaf html template engine dependencies
+    // thymeleaf html template engine dependencies
     implementation(libs.spring.boot.starter.thymeleaf)
-
-    //JavaMailSender dependencies
+    // javaMailSender dependencies
     implementation(libs.spring.boot.starter.mail)
-
-    //Firebase app initializer
+    // firebase app initializer
     implementation(libs.firebase.admin.sdk)
+    // data access layer
+    implementation(libs.spring.boot.starter.data.jpa)
+    // enable connection to postgresql instance
+    runtimeOnly(libs.postgresql)
 }
 
 tasks.test {
