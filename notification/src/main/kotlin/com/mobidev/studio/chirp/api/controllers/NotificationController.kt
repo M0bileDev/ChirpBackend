@@ -7,10 +7,7 @@ import com.mobidev.studio.chirp.api.request.RegisterDeviceRequest
 import com.mobidev.studio.chirp.api.util.requestUserId
 import com.mobidev.studio.chirp.service.PushNotificationService
 import jakarta.validation.Valid
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.bind.annotation.*
 
 @RestController
 @RequestMapping("/api/v1/notification")
@@ -27,5 +24,16 @@ class NotificationController(
             token = body.token,
             platform = body.platformDto.toPlatform()
         ).toDeviceTokenDto()
+    }
+
+    @DeleteMapping("/unregister/{$TOKEN}")
+    fun unregisterDeviceToken(
+        @PathVariable(TOKEN) token: String
+    ) {
+        return pushNotificationService.unregisterDevice(token = token)
+    }
+
+    companion object {
+        private const val TOKEN = "token"
     }
 }
