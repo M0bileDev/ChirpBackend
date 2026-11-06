@@ -28,6 +28,8 @@ dependencies {
     implementation(libs.spring.boot.starter.data.jpa)
     // enable connection to postgresql instance
     runtimeOnly(libs.postgresql)
+    // enables validation annotations
+    implementation(libs.spring.boot.starter.validation)
 }
 
 tasks.test {
