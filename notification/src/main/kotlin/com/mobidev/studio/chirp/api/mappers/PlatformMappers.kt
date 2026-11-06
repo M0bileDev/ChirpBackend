@@ -9,3 +9,10 @@ fun Platform.toPlatformDto(): PlatformDto {
         Platform.IOS -> PlatformDto.IOS
     }
 }
+
+fun PlatformDto.toPlatform(): Platform {
+    return when (this) {
+        PlatformDto.ANDROID -> Platform.ANDROID
+        PlatformDto.IOS -> Platform.IOS
+    }
+}
