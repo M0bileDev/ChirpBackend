@@ -23,7 +23,6 @@ dependencies {
     implementation(libs.spring.boot.starter.security)
     // enables validation annotations
     implementation(libs.spring.boot.starter.validation)
-
     // enables jwt related classes
     implementation(libs.jwt.api)
     runtimeOnly(libs.jwt.impl)
