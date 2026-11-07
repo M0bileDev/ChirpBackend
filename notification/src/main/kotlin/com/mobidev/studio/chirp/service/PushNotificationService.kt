@@ -14,7 +14,9 @@ import com.mobidev.studio.chirp.infra.mappers.toPlatformEntity
 import com.mobidev.studio.chirp.infra.push_notification.FirebasePushNotificationService
 import jakarta.transaction.Transactional
 import org.slf4j.LoggerFactory
+import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
+import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.ConcurrentSkipListMap
 
@@ -98,7 +100,9 @@ class PushNotificationService(
             )
         )
 
-        firebasePushNotificationService.sendNotification(pushNotification)
+        sendWithRetry(
+            pushNotification = pushNotification
+        )
     }
 
     fun sendWithRetry(
@@ -152,6 +156,41 @@ class PushNotificationService(
         logger.info("Scheduled retry, attempt: $attempt for push notification id: ${pushNotification.pushNotificationId} in $delaySeconds seconds")
     }
 
+    @Scheduled(fixedDelay = RETRY_TASK_DELAY_MINUTES)
+    fun processRetries() {
+        val now = Instant.now()
+        val nowMillis = now.toEpochMilli()
+        // return all the retries when the key (milliseconds) is less than the timestamp passed as an argument (nowMillis)
+        val toProcess = retryQueue.headMap(nowMillis, true)
+
+        if (toProcess.isEmpty()) return
+
+        // local copy, prevents ConcurrentModificationException
+        val entries = toProcess.entries.toList()
+        entries.forEach { (timeMillis, retries) ->
+            retryQueue.remove(timeMillis)
+
+            // push notification retry mechanism
+            retries.forEach { retry ->
+                try {
+                    // age -> time difference between retry created at and now
+                    val age = Duration.between(retry.createdAt, now)
+                    if (age.toMinutes() > MAX_RETRY_AGE_MINUTES) {
+                        logger.warn("Dropping old retry with id: ${retry.pushNotification.pushNotificationId}, reason ${age.toMinutes()} minutes old")
+                        return@forEach
+                    }
+
+                    sendWithRetry(
+                        pushNotification = retry.pushNotification,
+                        attempt = retry.attempt
+                    )
+                } catch (ex: Exception) {
+                    logger.error("Error processing retry with id: ${retry.pushNotification.pushNotificationId}", ex)
+                }
+            }
+        }
+    }
+
     companion object {
         private const val CHAT_ID = "chatId"
         private const val TYPE = "type"
@@ -164,5 +203,6 @@ class PushNotificationService(
             600L
         )
         private const val MAX_RETRY_AGE_MINUTES = 30L
+        private const val RETRY_TASK_DELAY_MINUTES = 15_000L
     }
 }
