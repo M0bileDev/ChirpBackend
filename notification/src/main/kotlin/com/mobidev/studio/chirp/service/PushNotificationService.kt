@@ -100,6 +100,32 @@ class PushNotificationService(
         firebasePushNotificationService.sendNotification(pushNotification)
     }
 
+    fun sendWithRetry(
+        pushNotification: PushNotification,
+        attempt: Int = 0
+    ) {
+        val result = firebasePushNotificationService.sendNotification(pushNotification)
+
+        if (result.permanentFailures.isNotEmpty()) {
+            // remove device tokens from database as they are not usable anymore (they caused permanent failures)
+            result.permanentFailures.forEach { deviceToken ->
+                deviceTokenRepository.deleteByToken(token = deviceToken.token)
+            }
+        }
+
+        // not empty and backoff steps are still available (in range 30..600 seconds)
+        if (result.temporaryFailures.isNotEmpty() && attempt < RETRY_DELAYS_SECONDS.size) {
+            val retryPushNotification = pushNotification.copy(
+                recipients = result.temporaryFailures
+            )
+            //todo schedule retry
+        }
+
+        if(result.succeeded.isNotEmpty()){
+            logger.info("Successfully sent notification to ${result.succeeded.size} devices")
+        }
+    }
+
     companion object {
         private const val CHAT_ID = "chatId"
         private const val TYPE = "type"
