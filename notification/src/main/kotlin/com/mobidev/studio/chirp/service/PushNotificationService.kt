@@ -15,6 +15,7 @@ import com.mobidev.studio.chirp.infra.push_notification.FirebasePushNotification
 import jakarta.transaction.Transactional
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import java.time.Instant
 import java.util.concurrent.ConcurrentSkipListMap
 
 @Service
@@ -118,12 +119,37 @@ class PushNotificationService(
             val retryPushNotification = pushNotification.copy(
                 recipients = result.temporaryFailures
             )
-            //todo schedule retry
+            scheduleRetry(
+                pushNotification = retryPushNotification,
+                attempt = attempt + 1
+            )
         }
 
-        if(result.succeeded.isNotEmpty()){
+        if (result.succeeded.isNotEmpty()) {
             logger.info("Successfully sent notification to ${result.succeeded.size} devices")
         }
+    }
+
+    fun scheduleRetry(
+        pushNotification: PushNotification,
+        attempt: Int
+    ) {
+        // convert attempt into index -> attempt - 1
+        val delaySeconds = RETRY_DELAYS_SECONDS.getOrElse(attempt - 1) {
+            RETRY_DELAYS_SECONDS.last()
+        }
+        val executeAt = Instant.now().plusSeconds(delaySeconds)
+        val executeAtMillis = executeAt.toEpochMilli()
+        val retryData = RetryData(
+            pushNotification = pushNotification,
+            attempt = attempt,
+            createdAt = Instant.now()
+        )
+
+        retryQueue.compute(executeAtMillis) { _, retries ->
+            (retries ?: mutableListOf()).apply { add(retryData) }
+        }
+        logger.info("Scheduled retry, attempt: $attempt for push notification id: ${pushNotification.pushNotificationId} in $delaySeconds seconds")
     }
 
     companion object {
