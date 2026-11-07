@@ -6,5 +6,5 @@ import jakarta.validation.constraints.NotBlank
 data class RegisterDeviceRequest(
     @field:NotBlank
     val token: String,
-    val platformDto: PlatformDto
+    val platform: PlatformDto
 )
