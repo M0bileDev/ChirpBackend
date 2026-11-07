@@ -22,7 +22,7 @@ class NotificationController(
         return pushNotificationService.registerDevice(
             userId = requestUserId,
             token = body.token,
-            platform = body.platformDto.toPlatform()
+            platform = body.platform.toPlatform()
         ).toDeviceTokenDto()
     }
 
