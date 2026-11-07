@@ -4,6 +4,7 @@ import com.mobidev.studio.chirp.domain.exception.InvalidDeviceTokenException
 import com.mobidev.studio.chirp.domain.model.DeviceToken
 import com.mobidev.studio.chirp.domain.model.Platform
 import com.mobidev.studio.chirp.domain.model.PushNotification
+import com.mobidev.studio.chirp.domain.model.RetryData
 import com.mobidev.studio.chirp.domain.type.ChatId
 import com.mobidev.studio.chirp.domain.type.UserId
 import com.mobidev.studio.chirp.infra.database.entities.DeviceTokenEntity
@@ -14,6 +15,7 @@ import com.mobidev.studio.chirp.infra.push_notification.FirebasePushNotification
 import jakarta.transaction.Transactional
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
+import java.util.concurrent.ConcurrentSkipListMap
 
 @Service
 class PushNotificationService(
@@ -22,6 +24,10 @@ class PushNotificationService(
 ) {
 
     private val logger = LoggerFactory.getLogger(javaClass)
+
+    // ConcurrentSkipListSet (thread safe) -> summarizes certain values based on the key (in this case timestamp -> Long)
+    //  at a given millisecond timestamp certain values will be performed
+    private val retryQueue = ConcurrentSkipListMap<Long, MutableList<RetryData>>()
 
     @Transactional
     fun registerDevice(
@@ -98,5 +104,13 @@ class PushNotificationService(
         private const val CHAT_ID = "chatId"
         private const val TYPE = "type"
         private const val NEW_MESSAGE = "new_message"
+        private val RETRY_DELAYS_SECONDS = listOf(
+            30L,
+            60L,
+            120L,
+            300L,
+            600L
+        )
+        private const val MAX_RETRY_AGE_MINUTES = 30L
     }
 }
