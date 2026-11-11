@@ -277,21 +277,10 @@ class ChatWebSocketHandler(
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     fun onJoinChat(chatParticipantsJoinedEvent: ChatParticipantsJoinedEvent) {
         //first sync hashmaps
-        connectionLock.write {
-            chatParticipantsJoinedEvent.userIds.forEach { userId ->
-                userChatIds.compute(userId) { _, chatIds ->
-                    (chatIds ?: mutableSetOf()).apply {
-                        add(chatParticipantsJoinedEvent.chatId)
-                    }
-                }
-
-                userToSessions[userId]?.forEach { sessionId ->
-                    chatToSessions.compute(chatParticipantsJoinedEvent.chatId) { _, sessionIds ->
-                        (sessionIds ?: mutableSetOf()).apply { add(sessionId) }
-                    }
-                }
-            }
-        }
+        updateChatForUsers(
+            chatId = chatParticipantsJoinedEvent.chatId,
+            participantIds = chatParticipantsJoinedEvent.userIds.toList(),
+        )
 
         //second, broadcast the change over ws, client will fetch changes over POST request (participant joined, left, etc.)
         broadcastChatParticipantsChanged(
@@ -484,16 +473,26 @@ class ChatWebSocketHandler(
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     fun onChatCreated(chatCreatedEvent: ChatCreatedEvent) {
         //first sync hashmaps
+        updateChatForUsers(
+            chatId = chatCreatedEvent.chatId,
+            participantIds = chatCreatedEvent.participantIds,
+        )
+    }
+
+    private fun updateChatForUsers(
+        chatId: ChatId,
+        participantIds: List<UserId>,
+    ) {
         connectionLock.write {
-            chatCreatedEvent.participantIds.forEach { userId ->
+            participantIds.forEach { userId ->
                 userChatIds.compute(userId) { _, chatIds ->
                     (chatIds ?: mutableSetOf()).apply {
-                        add(chatCreatedEvent.chatId)
+                        add(chatId)
                     }
                 }
 
                 userToSessions[userId]?.forEach { sessionId ->
-                    chatToSessions.compute(chatCreatedEvent.chatId) { _, sessionIds ->
+                    chatToSessions.compute(chatId) { _, sessionIds ->
                         (sessionIds ?: mutableSetOf()).apply { add(sessionId) }
                     }
                 }
