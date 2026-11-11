@@ -115,8 +115,12 @@ class ChatWebSocketHandler(
         if (userSessionsId.isEmpty()) return
 
         userSessionsId.forEach { sessionId ->
+            val userSession = connectionLock.read {
+                sessions[sessionId]
+            } ?: return@forEach
+
             sendTextMessageToSession(
-                sessionId = sessionId,
+                userSession = userSession,
                 message = message,
             )
         }
@@ -124,11 +128,10 @@ class ChatWebSocketHandler(
 
     // sends to exactly one session, so callers that already iterate over sessions
     // (like broadcastToChat) don't fan out to every session of the same user again
-    private fun sendTextMessageToSession(sessionId: SessionId, message: OutgoingWebSocketMessage) {
-        val userSession = connectionLock.read {
-            sessions[sessionId]
-        } ?: return
-
+    private fun sendTextMessageToSession(
+        userSession: UserSession,
+        message: OutgoingWebSocketMessage
+    ) {
         if (userSession.session.isOpen) {
             try {
                 val messageJson = objectMapper.writeValueAsString(message)
@@ -153,8 +156,12 @@ class ChatWebSocketHandler(
         // chatToSessions already holds every session of every participant,
         // so each one gets the message exactly once
         chatSessions.forEach { sessionId ->
-            sendTextMessageToSession(
-                sessionId = sessionId,
+            val userSession = connectionLock.read {
+                sessions[sessionId]
+            } ?: return@forEach
+
+            sendTextMessageToUser(
+                userId = userSession.userId,
                 message = message,
             )
         }
