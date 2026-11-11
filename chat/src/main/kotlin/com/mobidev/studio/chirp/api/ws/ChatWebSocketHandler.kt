@@ -2,10 +2,7 @@ package com.mobidev.studio.chirp.api.ws
 
 import com.mobidev.studio.chirp.api.dto.*
 import com.mobidev.studio.chirp.api.mappers.toChatMessageDto
-import com.mobidev.studio.chirp.domain.event.ChatParticipantsJoinedEvent
-import com.mobidev.studio.chirp.domain.event.ChatParticipantsLeftEvent
-import com.mobidev.studio.chirp.domain.event.MessageDeletedEvent
-import com.mobidev.studio.chirp.domain.event.ProfilePictureUpdatedEvent
+import com.mobidev.studio.chirp.domain.event.*
 import com.mobidev.studio.chirp.domain.exception.InvalidTokenException
 import com.mobidev.studio.chirp.domain.type.ChatId
 import com.mobidev.studio.chirp.domain.type.UserId
@@ -280,21 +277,10 @@ class ChatWebSocketHandler(
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     fun onJoinChat(chatParticipantsJoinedEvent: ChatParticipantsJoinedEvent) {
         //first sync hashmaps
-        connectionLock.write {
-            chatParticipantsJoinedEvent.userIds.forEach { userId ->
-                userChatIds.compute(userId) { _, chatIds ->
-                    (chatIds ?: mutableSetOf()).apply {
-                        add(chatParticipantsJoinedEvent.chatId)
-                    }
-                }
-
-                userToSessions[userId]?.forEach { sessionId ->
-                    chatToSessions.compute(chatParticipantsJoinedEvent.chatId) { _, sessionIds ->
-                        (sessionIds ?: mutableSetOf()).apply { add(sessionId) }
-                    }
-                }
-            }
-        }
+        updateChatForUsers(
+            chatId = chatParticipantsJoinedEvent.chatId,
+            participantIds = chatParticipantsJoinedEvent.userIds.toList(),
+        )
 
         //second, broadcast the change over ws, client will fetch changes over POST request (participant joined, left, etc.)
         broadcastChatParticipantsChanged(
@@ -480,6 +466,36 @@ class ChatWebSocketHandler(
                 }
             } catch (ex: Exception) {
                 logger.error("Could not update session $sessionId with profile picture", ex)
+            }
+        }
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    fun onChatCreated(chatCreatedEvent: ChatCreatedEvent) {
+        //first sync hashmaps
+        updateChatForUsers(
+            chatId = chatCreatedEvent.chatId,
+            participantIds = chatCreatedEvent.participantIds,
+        )
+    }
+
+    private fun updateChatForUsers(
+        chatId: ChatId,
+        participantIds: List<UserId>,
+    ) {
+        connectionLock.write {
+            participantIds.forEach { userId ->
+                userChatIds.compute(userId) { _, chatIds ->
+                    (chatIds ?: mutableSetOf()).apply {
+                        add(chatId)
+                    }
+                }
+
+                userToSessions[userId]?.forEach { sessionId ->
+                    chatToSessions.compute(chatId) { _, sessionIds ->
+                        (sessionIds ?: mutableSetOf()).apply { add(sessionId) }
+                    }
+                }
             }
         }
     }

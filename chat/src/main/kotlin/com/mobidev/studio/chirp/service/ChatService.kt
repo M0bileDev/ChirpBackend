@@ -2,8 +2,9 @@ package com.mobidev.studio.chirp.service
 
 import com.mobidev.studio.chirp.api.dto.ChatMessageDto
 import com.mobidev.studio.chirp.api.mappers.toChatMessageDto
-import com.mobidev.studio.chirp.domain.event.ChatParticipantsLeftEvent
+import com.mobidev.studio.chirp.domain.event.ChatCreatedEvent
 import com.mobidev.studio.chirp.domain.event.ChatParticipantsJoinedEvent
+import com.mobidev.studio.chirp.domain.event.ChatParticipantsLeftEvent
 import com.mobidev.studio.chirp.domain.exception.ChatNotFoundException
 import com.mobidev.studio.chirp.domain.exception.ChatParticipantNotFoundException
 import com.mobidev.studio.chirp.domain.exception.ForbiddenException
@@ -48,12 +49,21 @@ class ChatService(
         val creatorParticipant =
             chatParticipantRepository.findByIdOrNull(creatorId)
                 ?: throw ChatParticipantNotFoundException(creatorId)
-
         val entity = ChatEntity(
             creator = creatorParticipant,
             participants = otherParticipants.plus(creatorParticipant),
         )
-        return chatRepository.save(entity).toChat()
+        val createdChat = chatRepository.saveAndFlush(entity).toChat()
+        val chatCreatedEvent = ChatCreatedEvent(
+            chatId = createdChat.id,
+            participantIds = createdChat.participants.map { it.userId }.toList()
+        )
+
+        applicationEventPublisher.publishEvent(
+            chatCreatedEvent
+        )
+
+        return createdChat
     }
 
     @Transactional
