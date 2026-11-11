@@ -2,10 +2,7 @@ package com.mobidev.studio.chirp.api.ws
 
 import com.mobidev.studio.chirp.api.dto.*
 import com.mobidev.studio.chirp.api.mappers.toChatMessageDto
-import com.mobidev.studio.chirp.domain.event.ChatParticipantsJoinedEvent
-import com.mobidev.studio.chirp.domain.event.ChatParticipantsLeftEvent
-import com.mobidev.studio.chirp.domain.event.MessageDeletedEvent
-import com.mobidev.studio.chirp.domain.event.ProfilePictureUpdatedEvent
+import com.mobidev.studio.chirp.domain.event.*
 import com.mobidev.studio.chirp.domain.exception.InvalidTokenException
 import com.mobidev.studio.chirp.domain.type.ChatId
 import com.mobidev.studio.chirp.domain.type.UserId
@@ -480,6 +477,26 @@ class ChatWebSocketHandler(
                 }
             } catch (ex: Exception) {
                 logger.error("Could not update session $sessionId with profile picture", ex)
+            }
+        }
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    fun onChatCreated(chatCreatedEvent: ChatCreatedEvent) {
+        //first sync hashmaps
+        connectionLock.write {
+            chatCreatedEvent.participantIds.forEach { userId ->
+                userChatIds.compute(userId) { _, chatIds ->
+                    (chatIds ?: mutableSetOf()).apply {
+                        add(chatCreatedEvent.chatId)
+                    }
+                }
+
+                userToSessions[userId]?.forEach { sessionId ->
+                    chatToSessions.compute(chatCreatedEvent.chatId) { _, sessionIds ->
+                        (sessionIds ?: mutableSetOf()).apply { add(sessionId) }
+                    }
+                }
             }
         }
     }
