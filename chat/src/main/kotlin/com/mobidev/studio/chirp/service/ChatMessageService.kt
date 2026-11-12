@@ -16,12 +16,14 @@ import com.mobidev.studio.chirp.infra.database.repositories.ChatMessageRepositor
 import com.mobidev.studio.chirp.infra.database.repositories.ChatParticipantRepository
 import com.mobidev.studio.chirp.infra.database.repositories.ChatRepository
 import com.mobidev.studio.chirp.infra.message_queue.EventPublisher
+import com.mobidev.studio.chirp.service.util.MessageCacheEvictionHelper
+import com.mobidev.studio.chirp.service.util.MessageCacheEvictionHelper.Companion.MESSAGES_CACHE_NAME
 import jakarta.transaction.Transactional
 import org.springframework.cache.annotation.CacheEvict
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.stereotype.Service
-import java.util.UUID
+import java.util.*
 
 @Service
 class ChatMessageService(
@@ -29,7 +31,8 @@ class ChatMessageService(
     private val chatMessageRepository: ChatMessageRepository,
     private val chatParticipantRepository: ChatParticipantRepository,
     private val applicationEventPublisher: ApplicationEventPublisher,
-    private val eventPublisher: EventPublisher
+    private val eventPublisher: EventPublisher,
+    private val messageCacheEvictionHelper: MessageCacheEvictionHelper
 ) {
 
     @Transactional
@@ -96,18 +99,6 @@ class ChatMessageService(
             messageDeletedEvent
         )
 
-        evictMessagesCache(message.chatId)
-    }
-
-    @CacheEvict(
-        value = [MESSAGES_CACHE_NAME],
-        key = "#chatId"
-    )
-    fun evictMessagesCache(chatId: ChatId) {
-        // NO-OP: Let spring framework handle the cache evict
-    }
-
-    companion object {
-        const val MESSAGES_CACHE_NAME = "messages"
+        messageCacheEvictionHelper.evictMessagesCache(message.chatId)
     }
 }
